@@ -308,11 +308,12 @@
   .skill-row b{color:var(--ink);font-family:var(--font-serif);font-size:14px;}
   .item-pick-list{display:flex;flex-direction:column;gap:8px;margin-top:14px;}
   .item-row{
-    display:flex;align-items:center;justify-content:space-between;gap:10px;
+    display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;text-align:left;
     border:1px solid var(--line);border-radius:4px;padding:10px 14px;cursor:pointer;
-    font-family:var(--font-sans);font-size:13px;background:var(--paper);
+    font-family:var(--font-sans);font-size:13px;background:var(--paper);color:var(--ink);
   }
   .item-row:hover{border-color:var(--vermillion);}
+  .item-row:disabled{cursor:not-allowed;}
   .item-row .tier-tag{font-size:10.5px;padding:2px 8px;border-radius:20px;border:1px solid currentColor;}
   .item-row .bonus{color:var(--muted);font-size:11.5px;}
 
@@ -344,6 +345,25 @@
   .combat-actions .choice-btn:disabled{opacity:.4;cursor:not-allowed;}
   .skill-menu{display:flex;flex-direction:column;gap:8px;margin-top:8px;}
   .combat-waiting{font-family:var(--font-sans);font-size:12.5px;color:var(--muted);text-align:center;padding:10px;}
+
+  /* ---------- 城鎮格狀地圖 ---------- */
+  .town-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;max-width:340px;margin-top:12px;}
+  .town-tile{
+    aspect-ratio:1;border-radius:6px;border:1px solid var(--line);background:var(--paper);
+    display:flex;align-items:center;justify-content:center;
+    font-family:var(--font-serif);font-size:14px;color:var(--muted);cursor:not-allowed;padding:0;
+  }
+  .town-tile.poi-shop{background:color-mix(in srgb, var(--gold) 22%, var(--paper));color:var(--ink-soft);}
+  .town-tile.poi-sect{background:color-mix(in srgb, var(--indigo) 22%, var(--paper));color:var(--ink-soft);}
+  .town-tile.poi-inn{background:var(--paper-deep);color:var(--ink-soft);}
+  .town-tile.poi-market{background:color-mix(in srgb, var(--vermillion) 16%, var(--paper));color:var(--ink-soft);}
+  .town-tile.poi-gate{background:var(--paper-raised);border-style:dashed;color:var(--muted);}
+  .town-tile.is-adjacent{cursor:pointer;border-color:var(--indigo-soft);color:var(--ink);}
+  .town-tile.is-adjacent:hover{border-color:var(--vermillion);transform:scale(1.06);}
+  .town-tile.is-current{background:var(--vermillion) !important;color:#fff5ea !important;border-color:var(--vermillion);}
+  .town-legend{display:flex;gap:14px;flex-wrap:wrap;margin-top:12px;font-family:var(--font-sans);font-size:11px;color:var(--muted);}
+  .town-legend span{display:inline-flex;align-items:center;gap:5px;}
+  .town-legend i{width:14px;height:14px;border-radius:3px;display:inline-block;border:1px solid var(--line);}
 
   @keyframes fx-float{
     0%{ transform:translate(-50%,0) scale(1); opacity:1; }
@@ -426,15 +446,9 @@
     </div>
 
     <div class="create-step" data-step="1">
-      <div class="step-head"><div class="step-eyebrow">第二步</div><h2>你所信奉的道途？</h2><p>諸子百家，各有取向，將影響你日後神通根骨與立身之道。</p></div>
-      <div class="card-grid" id="path-grid"></div>
-      <div class="step-actions"><button class="btn-ghost" id="btn-step1-back">上一步</button><button class="btn-primary" id="btn-step1-next" disabled>下一步</button></div>
-    </div>
-
-    <div class="create-step" data-step="2">
-      <div class="step-head"><div class="step-eyebrow">第三步</div><h2>分配你的資質</h2><p>根骨主體魄、悟性主參悟、機緣主際遇、人脈主人情——尚有 <span id="pool-left">8</span> 點可分配。</p></div>
+      <div class="step-head"><div class="step-eyebrow">第二步</div><h2>分配你的資質</h2><p>根骨主體魄、悟性主參悟、機緣主際遇、人脈主人情——尚有 <span id="pool-left">8</span> 點可分配。道途尚未選定，日後於城鎮修道院拜師習得。</p></div>
       <div class="allocator" id="allocator"></div>
-      <div class="step-actions"><button class="btn-ghost" id="btn-step2-back">上一步</button><button class="btn-primary" id="btn-step2-next">奠基入世</button></div>
+      <div class="step-actions"><button class="btn-ghost" id="btn-step1-back">上一步</button><button class="btn-primary" id="btn-step1-next">奠基入世</button></div>
     </div>
   </section>
 
@@ -443,6 +457,7 @@
     <aside class="panel sidebar">
       <div>
         <div class="id-line">出身 · 道途<b id="side-id">—</b></div>
+        <div class="loc-line"><span>年齡</span><b id="side-age">16 歲</b></div>
         <div class="loc-line"><span>所在地</span><b id="side-location">—</b></div>
         <div class="loc-line"><span>行程</span><b id="side-moves">0 / 0</b></div>
         <div class="stage-track" id="stage-track"></div>
@@ -515,7 +530,13 @@ const ORIGINS = [
   {id:"qin", name:"秦國", place:"西境 · 邊郡", desc:"軍戶出身，尚黑重法的秦國治下，你自幼隨長輩操練，筋骨遠比同齡人紮實。", attr:{gu:2}, fame:{miao:15}, tags:["軍戶","法度"]},
   {id:"jingzhou", name:"荊國", place:"北域 · 計都", desc:"軍庭帝國的尋常士卒之後，袍澤情義比什麼都重，鐵血鑄成了你的筋骨與脾氣。", attr:{gu:2}, fame:{jianghu:10,miao:5}, tags:["軍庭","鐵血"]},
   {id:"mu", name:"牧國", place:"北域 · 神都", desc:"政教合一的牧國治下，蒼圖神教信仰浸潤了你的成長，你隱約相信命格自有所歸。", attr:{ji:2}, fame:{daotong:15}, tags:["神權","信仰"]},
-  {id:"zhuang", name:"莊國", place:"西境 · 楓林鎮", desc:"道屬小國的寒門子弟，父母是尋常藥鋪掌櫃，家境清貧，卻自小被教導：人窮，心不能窮。", attr:{gu:1,wu:1,ji:1,ren:1}, fame:{}, chixin:10, tags:["寒門","均衡"]}
+  {id:"zhuang", name:"莊國", place:"西境 · 楓林鎮", desc:"道屬小國的寒門子弟，父母是尋常藥鋪掌櫃，家境清貧，卻自小被教導：人窮，心不能窮。", attr:{gu:1,wu:1,ji:1,ren:1}, fame:{}, chixin:10, tags:["寒門","均衡"]},
+  {id:"quguo", name:"曲國", place:"東域 · 曲邑", desc:"依附齊國的商貿附庸小國，往來商旅雖不及臨淄繁華，卻也自成一方天地。", attr:{ji:1,ren:1}, fame:{jianghu:8,miao:4}, tags:["附庸","商賈"]},
+  {id:"yueguo", name:"越國", place:"南域 · 會稽", desc:"依附楚國的劍術之鄉，鑄劍之術冠絕南域，民風剽悍尚武。", attr:{gu:1,wu:1}, fame:{jianghu:10}, tags:["附庸","劍術"]},
+  {id:"yunguo", name:"雲國", place:"西域 · 凌霄", desc:"西域獨立列國，凌霄閣座落於此，修行風氣濃厚，行事講究一個「悟」字。", attr:{wu:2}, fame:{daotong:8}, tags:["列國","修行"]},
+  {id:"liguo", name:"黎國", place:"北域 · 舊雪國", desc:"原稱雪國，統合西北五國新興而立，邊塞苦寒，民風堅韌。", attr:{gu:1,ji:1}, fame:{jianghu:6,miao:4}, tags:["新興","邊塞"]},
+  {id:"zhongshan", name:"中山國", place:"中域 · 中山", desc:"依附景國的中樞小國，地處天子腳下，行事處處講究分寸。", attr:{ren:2}, fame:{miao:10}, tags:["附庸","中樞"]},
+  {id:"songguo", name:"宋國", place:"南域 · 商丘", desc:"依附楚國的儒風小國，講學之風盛行，尊禮重信。", attr:{wu:1,ren:1}, fame:{miao:6,daotong:4}, tags:["附庸","儒風"]}
 ];
 
 const PATHS = [
@@ -562,8 +583,40 @@ const FINALE = {
 
 /* ===================== 天下地圖（水平軸） ===================== */
 /* 座標為 0-100 的相對百分比。gate 為所需 stageIdx（達到該境界才可進入）。 */
+/* 附庸列國共用的境遇庫（規模較小，暫共用同一組境遇） */
+const VASSAL_EVENTS = [
+  { title:"附庸的難處",
+    text:"地方官員向你訴苦，說小國夾在大國之間，賦稅徭役兩頭都要應付，百姓苦不堪言。",
+    choices:[
+      {label:"上書大國，代為陳情", cn:"廟堂", result:"你修書陳情，雖未必立竿見影，卻也讓地方官員記下你這份仗義執言。", effects:{miao:8,ren:1}},
+      {label:"捐出資材，稍解燃眉", cn:"赤心", result:"你掏出些許道元石接濟，百姓的日子稍稍好過了些，你心裡也踏實。", effects:{chixin:8,daoyuan:-8}},
+      {label:"聽過就算，不多插手", cn:"機緣", result:"你聽過便罷，畢竟這不是你一介遊人能解決的難題。", effects:{ji:1,chixin:-4}}
+    ]},
+  { title:"地方豪強",
+    text:"當地一名豪強仗著幾分拳腳欺壓鄉里，恰巧被你撞見他強索攤販錢財。",
+    choices:[
+      {label:"出手教訓，替百姓出氣", cn:"根骨", result:"你三兩下便讓那豪強服了軟，圍觀百姓紛紛叫好，你也因此在當地小有名氣。", effects:{gu:1,jianghu:8,health:-4}},
+      {label:"暗中周旋，勸退了事", cn:"人脈", result:"你動用幾分人脈，私下把事情擺平，沒傷和氣，卻也解決了問題。", effects:{ren:2,daoyuan:5}},
+      {label:"不欲多事，繞道而行", cn:"機緣", result:"你不欲多生事端，繞開了這攤麻煩，只是心裡總覺得不太痛快。", effects:{ji:1,chixin:-6}}
+    ]},
+  { title:"邊境走私",
+    text:"你無意間發現一條專供走私開脈丹原料的暗道，看守的人漫不經心，顯是收了不少好處。",
+    choices:[
+      {label:"查探清楚，回報太虛閣", cn:"悟性", result:"你摸清了門道，將線索呈報太虛閣，雖暫時沒有動作，這份情報遲早派得上用場。", effects:{wu:1,daotong:6}},
+      {label:"順手取些原料，補貼己用", cn:"機緣", result:"你順手取了些原料，雖說不上光彩，卻也解了燃眉之急。", effects:{ji:1,daoyuan:12,chixin:-6}},
+      {label:"直接搗毀暗道", cn:"赤心", result:"你一不做二不休，直接搗毀了那條暗道，斷了這門黑心生意。", effects:{chixin:10,xie:-4,health:-6}}
+    ]},
+  { title:"小國求助",
+    text:"地方官員聽聞你是位過路的修士，登門求助，說近日常有不明身分的人在邊境滋擾，希望你能出手相助。",
+    choices:[
+      {label:"仗義出手，查明底細", cn:"赤心", result:"你出手相助，查明滋擾者不過是幾個宵小之徒，順手便解決了，官員千恩萬謝。", effects:{chixin:8,jianghu:6,daoyuan:6}},
+      {label:"建議加強城防，授人以漁", cn:"廟堂", result:"你沒有親自出手，而是指點了幾分防務上的門道，官員雖略感失望，卻也受用。", effects:{miao:8}},
+      {label:"婉拒，非分內之事", cn:"機緣", result:"你婉拒了這份請託，繼續自己的行程，心裡卻也有些過意不去。", effects:{ji:1,chixin:-4}}
+    ]}
+];
+
 const MAP_NODES = [
-  { id:"zhuang", name:"莊國·楓林鎮", x:20, y:66, gate:null, glyph:"鎮",
+  { id:"zhuang", name:"莊國·楓林鎮", x:20, y:66, gate:null, type:"town", glyph:"鎮",
     events:[
       { title:"藥鋪裡的抉擇",
         text:"你在藥鋪學徒時，一名遊方道人塞給你一枚來歷不明的「開脈丹」，聲稱能助你早日開脈，卻要你替他跑一趟辨不清底細的差事。",
@@ -587,7 +640,7 @@ const MAP_NODES = [
           {label:"提出對等交換而非依附", cn:"人脈", result:"你提出以勞力換資材、不簽賣身契的條件，那家人略感意外，倒也應了下來，彼此留了分寸。", effects:{ren:2,daoyuan:6}}
         ]}
     ]},
-  { id:"jing", name:"景國·天京", x:50, y:52, gate:null, glyph:"京",
+  { id:"jing", name:"景國·天京", x:50, y:52, gate:null, type:"town", glyph:"京",
     events:[
       { title:"招攬的手",
         text:"一名自稱代表某方勢力的人找上門，語氣客氣卻帶著審視，想知道你日後是願入朝為官、闖蕩江湖，還是一心求道。",
@@ -611,7 +664,7 @@ const MAP_NODES = [
           {label:"婉拒赴會，潛心閉關", cn:"機緣", result:"你選擇不去湊這場熱鬧，把時間都用在了自己的道途上，錯過了揚名的機會，卻也躲開了場中的明爭暗鬥。", effects:{ji:1,daoyuan:10}}
         ]}
     ]},
-  { id:"qi", name:"齊國·臨淄", x:80, y:40, gate:null, glyph:"臨",
+  { id:"qi", name:"齊國·臨淄", x:80, y:40, gate:null, type:"town", glyph:"臨",
     events:[
       { title:"開脈丹的黑市",
         text:"你無意間撞見一樁私下交易——有人在低價兜售來路不明的開脈丹，買方多是付不起正價的寒門子弟。",
@@ -635,7 +688,7 @@ const MAP_NODES = [
           {label:"以修行繁忙為由婉拒", cn:"機緣", result:"你婉拒了他的求見，專心自己的修行。他失望地離開，你心裡掠過一絲說不清的滋味。", effects:{ji:1,chixin:-8}}
         ]}
     ]},
-  { id:"chu", name:"楚國·郢都", x:56, y:82, gate:null, glyph:"郢",
+  { id:"chu", name:"楚國·郢都", x:56, y:82, gate:null, type:"town", glyph:"郢",
     events:[
       { title:"同門的私怨",
         text:"同宗門中兩名師兄弟因一件功勞歸屬鬧得不可開交，都想拉你評理站隊。",
@@ -659,7 +712,7 @@ const MAP_NODES = [
           {label:"勸他自首，願陪他一同承擔", cn:"赤心", result:"你沒有替他掩蓋，也沒有落井下石，而是陪著他一同去面對——這份不逃避的擔當，讓你們的情誼反而更深了一層。", effects:{chixin:14,ren:2,miao:4}}
         ]}
     ]},
-  { id:"qin", name:"秦國·邊郡", x:16, y:40, gate:null, glyph:"秦",
+  { id:"qin", name:"秦國·邊郡", x:16, y:40, gate:null, type:"town", glyph:"秦",
     events:[
       { title:"邊疆的征召",
         text:"長城傳來邊防吃緊的消息，一紙征召文書送到你手中，邀你隨軍歷練——這既是苦差，也是履歷。",
@@ -683,7 +736,7 @@ const MAP_NODES = [
           {label:"視若無睹，專心趕路", cn:"機緣", result:"你把心一橫，只當沒看見。這世道從不缺可憐人，你若事事動心，早晚被拖垮。", effects:{chixin:-8,ji:1}}
         ]}
     ]},
-  { id:"jingzhou", name:"荊國·計都", x:62, y:14, gate:null, glyph:"荊",
+  { id:"jingzhou", name:"荊國·計都", x:62, y:14, gate:null, type:"town", glyph:"荊",
     events:[
       { title:"夜讀",
         text:"入夜後，你就著油燈翻閱手邊唯一的一卷典籍，字裡行間似有若無地印證著你所信奉的道途。",
@@ -707,7 +760,7 @@ const MAP_NODES = [
           {label:"以問道求真為己任", cn:"道統", result:"你選定了潛心問道的道途，此後行事，多了幾分沉靜內斂的定力。", effects:{daotong:16,daoyuan:10}}
         ]}
     ]},
-  { id:"mu", name:"牧國·神都", x:36, y:16, gate:null, glyph:"牧",
+  { id:"mu", name:"牧國·神都", x:36, y:16, gate:null, type:"town", glyph:"牧",
     events:[
       { title:"白骨道的試探",
         text:"一名行蹤詭秘之人在你耳邊低語，說白骨道教義「死亡是唯一的公平」自有其道理，邀你聽一場秘密的講經。",
@@ -731,7 +784,7 @@ const MAP_NODES = [
           {label:"暫且封存，來日再議", cn:"根骨", result:"你選擇先把秘藏封存，穩住根基要緊，這份謹慎讓你錯失了機緣，卻也避開了未知的風險。", effects:{gu:1,chixin:2}}
         ]}
     ]},
-  { id:"taixu", name:"太虛幻境·角樓", x:50, y:30, gate:null, special:true, glyph:"虛",
+  { id:"taixu", name:"太虛幻境·角樓", x:50, y:30, gate:null, type:"special", special:true, glyph:"虛",
     events:[
       { title:"太虛幻境初體驗",
         text:"你第一次踏入太虛幻境的論劍台，對手是個看似普通卻招式老辣的游脈修士，圍觀者不少。",
@@ -762,7 +815,7 @@ const MAP_NODES = [
           {label:"婉拒要職，但願效犬馬之勞", cn:"人脈", result:"你婉拒了正式的職位，卻表明願以自由之身相助，這份靈活的姿態，讓你既保有自主，也不失情分。", effects:{ren:2,daotong:4}}
         ]}
     ]},
-  { id:"bianhuang", name:"邊荒", x:50, y:5, gate:4, glyph:"荒",
+  { id:"bianhuang", name:"邊荒", x:50, y:5, gate:4, type:"special", glyph:"荒",
     events:[
       { title:"邊荒的前哨",
         text:"邊荒魔潮再度活躍的傳聞甚囂塵上，太虛閣召集騰龍境以上的修士組成前哨隊伍，先行探查。",
@@ -786,7 +839,7 @@ const MAP_NODES = [
           {label:"留下藥物，轉身離開", cn:"機緣", result:"你沒有殺牠，也沒多做糾纏，只留下些許藥材便轉身離去——這份分寸，你拿捏得剛好。", effects:{ji:1,chixin:4}}
         ]}
     ]},
-  { id:"yunxianlin", name:"隕仙林", x:56, y:96, gate:5, glyph:"隕",
+  { id:"yunxianlin", name:"隕仙林", x:56, y:96, gate:5, type:"special", glyph:"隕",
     events:[
       { title:"秘境的機緣",
         text:"你聽聞隕仙林邊緣一處小型秘境近日開啟，傳言其中藏有前人遺留的道術殘篇，只是入口地形凶險，已有修士折損其中。",
@@ -809,12 +862,20 @@ const MAP_NODES = [
           {label:"順著低語探尋其來歷", cn:"機緣", result:"你順藤摸瓜，探得了那縷怨念的來歷，雖沾染了幾分邪氣，卻也多掌握了一份底細。", effects:{ji:1,xie:8,chixin:-4}},
           {label:"以道術強行鎮壓", cn:"根骨", result:"你運起道術鎮壓那縷怨念，一番角力下來，怨念潰散，你也耗損不小。", effects:{gu:1,health:-10,daotong:6}}
         ]}
-    ]}
+    ]},
+  { id:"quguo", name:"曲國·曲邑", x:68, y:56, gate:null, type:"town", glyph:"曲", events:VASSAL_EVENTS },
+  { id:"yueguo", name:"越國·會稽", x:38, y:88, gate:null, type:"town", glyph:"越", events:VASSAL_EVENTS },
+  { id:"yunguo", name:"雲國·凌霄", x:8, y:60, gate:null, type:"town", glyph:"雲", events:VASSAL_EVENTS },
+  { id:"liguo", name:"黎國·舊雪城", x:22, y:10, gate:null, type:"town", glyph:"黎", events:VASSAL_EVENTS },
+  { id:"zhongshan", name:"中山國·中山", x:64, y:66, gate:null, type:"town", glyph:"中", events:VASSAL_EVENTS },
+  { id:"songguo", name:"宋國·商丘", x:70, y:86, gate:null, type:"town", glyph:"宋", events:VASSAL_EVENTS }
 ];
 
 const MAP_EDGES = [
   ["zhuang","qin"], ["zhuang","jing"], ["qin","mu"], ["mu","jingzhou"], ["jingzhou","jing"],
-  ["jing","qi"], ["jing","chu"], ["qi","chu"], ["jingzhou","bianhuang"], ["chu","yunxianlin"]
+  ["jing","qi"], ["jing","chu"], ["qi","chu"], ["jingzhou","bianhuang"], ["chu","yunxianlin"],
+  ["qi","quguo"], ["jing","quguo"], ["chu","yueguo"], ["qin","yunguo"], ["mu","liguo"],
+  ["jing","zhongshan"], ["chu","songguo"]
 ];
 
 const FILLER_EVENTS = [
@@ -905,8 +966,8 @@ function buildEnding(state){
 
 /* ===================== 遊戲狀態 State ===================== */
 let state = null;
-let create = {origin:null, path:null, alloc:{gu:0,wu:0,ji:0,ren:0}, poolLeft:8};
-let flow = {stageIdx:0, movesUsed:0, maxMoves:16, currentNodeId:null, nodeUsed:{}};
+let create = {origin:null, alloc:{gu:0,wu:0,ji:0,ren:0}, poolLeft:8};
+let flow = {stageIdx:0, movesUsed:0, maxMoves:16, currentNodeId:null, nodeUsed:{}, townGrid:null};
 
 function newState(){
   return {
@@ -915,8 +976,14 @@ function newState(){
     miao:0, jianghu:0, daotong:0, xie:0,
     journal:[], finaleSuccess:false, finalStageName:null,
     equipment:{weapon:null, armor:null, accessory:null},
-    inventory:[]
+    inventory:[],
+    age:16, days:0
   };
+}
+
+function advanceTime(days){
+  state.days += days;
+  state.age = 16 + Math.floor(state.days/360);
 }
 
 /* ===================== 裝備 / 技能 / 敵人 ===================== */
@@ -1015,23 +1082,6 @@ function renderOriginGrid(){
     grid.appendChild(card);
   });
 }
-function renderPathGrid(){
-  const grid = document.getElementById("path-grid");
-  grid.innerHTML = "";
-  PATHS.forEach(p=>{
-    const card = document.createElement("button");
-    card.className = "pick-card";
-    card.type = "button";
-    card.innerHTML = `<span class="name">${p.name}</span><span class="desc">${p.desc}</span>`;
-    card.addEventListener("click", ()=>{
-      create.path = p;
-      [...grid.children].forEach(c=>c.classList.remove("selected"));
-      card.classList.add("selected");
-      document.getElementById("btn-step1-next").disabled = false;
-    });
-    grid.appendChild(card);
-  });
-}
 function renderAllocator(){
   const box = document.getElementById("allocator");
   box.innerHTML = "";
@@ -1076,17 +1126,15 @@ function goStep(n){
 /* ===================== 遊戲主流程 ===================== */
 function startGame(){
   state = newState();
-  const o = create.origin, p = create.path;
+  const o = create.origin;
   Object.keys(create.alloc).forEach(k=> state[k]+=create.alloc[k]);
   if(o.attr) Object.entries(o.attr).forEach(([k,v])=> state[k]+=v);
-  if(p.attr) Object.entries(p.attr).forEach(([k,v])=> state[k]+=v);
   if(o.fame) Object.entries(o.fame).forEach(([k,v])=> state[k]+=v);
-  if(p.fame) Object.entries(p.fame).forEach(([k,v])=> state[k]+=v);
   if(o.chixin) state.chixin += o.chixin;
   state.originId = o.id; state.originName = o.name;
-  state.pathId = p.id; state.pathName = p.name;
+  state.pathId = null; state.pathName = "未入門牆";
 
-  flow = {stageIdx:0, movesUsed:0, maxMoves:16, currentNodeId:o.id, nodeUsed:{}};
+  flow = {stageIdx:0, movesUsed:0, maxMoves:16, currentNodeId:o.id, nodeUsed:{}, townGrid:null};
   showScreen("screen-game");
   renderSidebar();
   renderStageIntro();
@@ -1102,6 +1150,7 @@ function clampAll(){
 
 function renderSidebar(){
   document.getElementById("side-id").textContent = `${state.originName} · ${state.pathName}`;
+  document.getElementById("side-age").textContent = `${state.age} 歲`;
   const curNode = MAP_NODES.find(n=>n.id===flow.currentNodeId);
   document.getElementById("side-location").textContent = curNode ? curNode.name : "—";
   document.getElementById("side-moves").textContent = `${flow.movesUsed} / ${flow.maxMoves}`;
@@ -1283,16 +1332,274 @@ function pickNodeEvent(node){
 function travelTo(nodeId){
   flow.currentNodeId = nodeId;
   const node = MAP_NODES.find(n=>n.id===nodeId);
+  advanceTime(30 + Math.floor(Math.random()*26));
+  renderSidebar();
+
+  if(node.type === "town"){
+    flow.townGrid = {nodeId, x:2, y:4};
+    renderTownGrid(node);
+    return;
+  }
+
   const dangerous = node.gate != null;
-  const combatChance = dangerous ? 0.45 : 0.18;
+  const combatChance = dangerous ? 0.45 : 0;
   if(flow.movesUsed > 0 && Math.random() < combatChance){
-    const pool = dangerous ? ELITE_ENEMIES : NORMAL_ENEMIES;
+    const pool = ELITE_ENEMIES;
     const enemy = pool[Math.floor(Math.random()*pool.length)];
     startCombat(enemy, node);
     return;
   }
   const ev = pickNodeEvent(node);
   renderEvent(ev, node);
+}
+
+/* ===================== 城鎮格狀地圖 ===================== */
+const TOWN_SIZE = 5;
+const TOWN_POIS = [
+  {x:2, y:4, type:"gate", name:"城門"},
+  {x:0, y:1, type:"shop", name:"店舖"},
+  {x:4, y:1, type:"sect", name:"修道院"},
+  {x:1, y:2, type:"inn", name:"客棧"},
+  {x:3, y:0, type:"market", name:"集市"}
+];
+const TOWN_POI_GLYPH = {gate:"門", shop:"舖", sect:"院", inn:"棧", market:"市"};
+const TOWN_AMBIENCE = [
+  "巷弄間飄來陣陣飯香。","幾個孩童追逐嬉鬧而過。","賣貨郎的吆喝聲遠遠傳來。",
+  "一陣風捲起地上落葉。","遠處傳來幾聲犬吠。","有人在檐下打盹，渾然不覺天色將晚。"
+];
+let shopOffer = null;
+
+function currentTownNode(){
+  return flow.townGrid ? MAP_NODES.find(n=>n.id===flow.townGrid.nodeId) : null;
+}
+
+function leaveTown(){
+  flow.townGrid = null;
+  shopOffer = null;
+  renderMap();
+}
+
+function buildTownGridElement(node){
+  const cur = flow.townGrid;
+  const container = document.createElement("div");
+  container.className = "town-grid";
+  for(let y=0;y<TOWN_SIZE;y++){
+    for(let x=0;x<TOWN_SIZE;x++){
+      const poi = TOWN_POIS.find(p=>p.x===x && p.y===y);
+      const isCurrent = cur.x===x && cur.y===y;
+      const isAdjacent = !isCurrent && (Math.abs(cur.x-x)+Math.abs(cur.y-y)===1);
+      const tile = document.createElement("button");
+      tile.type = "button";
+      tile.className = "town-tile" + (poi?` poi-${poi.type}`:"") + (isCurrent?" is-current":"") + (isAdjacent?" is-adjacent":"");
+      tile.textContent = isCurrent ? "你" : (poi ? TOWN_POI_GLYPH[poi.type] : "");
+      tile.title = poi ? poi.name : "";
+      if(isAdjacent){
+        tile.addEventListener("click", ()=> moveInTown(x, y, node));
+      } else {
+        tile.disabled = true;
+      }
+      container.appendChild(tile);
+    }
+  }
+  return container;
+}
+
+function renderTownGrid(node, note){
+  document.getElementById("story-card").classList.remove("trial-card");
+  document.getElementById("result-box").classList.add("hide");
+  const cs = currentCultStage();
+  document.getElementById("story-stage").textContent = node.name;
+  document.getElementById("story-index").textContent = `${cs.rank} ${cs.name}`;
+  document.getElementById("story-title").textContent = "城中漫遊";
+  document.getElementById("story-text").innerHTML = `<p>${note || `你走在${node.name}的街巷間，可前往店舖、修道院、客棧，或穿街走巷探尋機緣。`}</p>`;
+
+  const wrap = document.getElementById("story-choices");
+  wrap.innerHTML = "";
+  wrap.appendChild(buildTownGridElement(node));
+
+  const legend = document.createElement("div");
+  legend.className = "town-legend";
+  legend.innerHTML = `
+    <span><i style="background:var(--vermillion)"></i>你</span>
+    <span><i class="poi-shop" style="background:color-mix(in srgb, var(--gold) 22%, var(--paper))"></i>店舖</span>
+    <span><i class="poi-sect" style="background:color-mix(in srgb, var(--indigo) 22%, var(--paper))"></i>修道院</span>
+    <span><i class="poi-inn" style="background:var(--paper-deep)"></i>客棧</span>
+    <span><i class="poi-market" style="background:color-mix(in srgb, var(--vermillion) 16%, var(--paper))"></i>集市</span>`;
+  wrap.appendChild(legend);
+
+  const btnRow = document.createElement("div");
+  btnRow.style.display = "flex"; btnRow.style.gap = "10px"; btnRow.style.marginTop = "16px"; btnRow.style.flexWrap = "wrap";
+  const leaveBtn = document.createElement("button");
+  leaveBtn.type = "button"; leaveBtn.className = "btn-ghost";
+  leaveBtn.textContent = "離開城鎮，返回地圖";
+  leaveBtn.addEventListener("click", leaveTown);
+  btnRow.appendChild(leaveBtn);
+  const charBtn = document.createElement("button");
+  charBtn.type = "button"; charBtn.className = "btn-ghost";
+  charBtn.textContent = "查看人物與裝備";
+  charBtn.addEventListener("click", renderCharacterSheet);
+  btnRow.appendChild(charBtn);
+  wrap.appendChild(btnRow);
+
+  renderSidebar();
+}
+
+function moveInTown(x, y, node){
+  flow.townGrid.x = x; flow.townGrid.y = y;
+  advanceTime(1);
+  const poi = TOWN_POIS.find(p=>p.x===x && p.y===y);
+  if(poi){
+    if(poi.type==="gate"){ leaveTown(); return; }
+    if(poi.type==="shop"){ renderShop(node); return; }
+    if(poi.type==="sect"){ renderSect(node); return; }
+    if(poi.type==="inn"){ renderInn(node); return; }
+    if(poi.type==="market"){ const ev = pickNodeEvent(node); renderEvent(ev, node); return; }
+  }
+  if(Math.random() < 0.08){
+    const enemy = NORMAL_ENEMIES[Math.floor(Math.random()*NORMAL_ENEMIES.length)];
+    startCombat(enemy, node, "town");
+    return;
+  }
+  const note = Math.random()<0.4 ? TOWN_AMBIENCE[Math.floor(Math.random()*TOWN_AMBIENCE.length)] : null;
+  renderTownGrid(node, note);
+}
+
+function poiResult(text, effects, node){
+  document.getElementById("story-choices").innerHTML = "";
+  const box = document.getElementById("result-box");
+  box.classList.remove("hide");
+  document.getElementById("result-text").textContent = text;
+  document.getElementById("result-chips").innerHTML = effectChips(effects);
+  renderSidebar();
+  document.getElementById("btn-continue").onclick = ()=> renderTownGrid(node);
+}
+
+function renderShop(node, keepOffer){
+  if(!keepOffer || !shopOffer){
+    const pool = [...ITEMS];
+    shopOffer = [];
+    for(let i=0;i<3 && pool.length;i++){
+      const idx = Math.floor(Math.random()*pool.length);
+      shopOffer.push(pool.splice(idx,1)[0]);
+    }
+  }
+  document.getElementById("story-card").classList.remove("trial-card");
+  document.getElementById("result-box").classList.add("hide");
+  document.getElementById("story-stage").textContent = node.name;
+  document.getElementById("story-index").textContent = "店舖";
+  document.getElementById("story-title").textContent = "行商鋪面";
+  document.getElementById("story-text").innerHTML = `<p>掌櫃堆滿笑臉招呼你，架上擺著幾件成色不一的貨色，都是尋常修士用得上的東西。</p><p style="font-family:var(--font-sans);font-size:13px;color:var(--gold);">你的道元：${state.daoyuan}</p>`;
+
+  const wrap = document.getElementById("story-choices");
+  wrap.innerHTML = "";
+  const priceMap = {"丁":15,"丙":35,"乙":70,"甲":140};
+  const list = document.createElement("div");
+  list.className = "item-pick-list";
+  shopOffer.forEach(it=>{
+    const price = priceMap[it.tier];
+    const owned = state.inventory.includes(it.id);
+    const canBuy = !owned && state.daoyuan >= price;
+    const bonusText = Object.entries(it.bonus).map(([k,v])=>{
+      const label = {atk:"攻擊",def:"防禦",spd:"速度",crit:"暴擊",hpmax:"氣血"}[k];
+      return `${label}+${v}`;
+    }).join(" ");
+    const row = document.createElement("button");
+    row.type = "button";
+    row.className = "item-row";
+    row.disabled = !canBuy;
+    if(!canBuy) row.style.opacity = ".5";
+    row.innerHTML = `<span><b>${it.name}</b> <span class="tier-tag" style="color:${TIER_COLOR[it.tier]}">${it.tier}品${SLOT_LABEL[it.slot]}</span><br><span class="bonus">${bonusText}</span></span><span>${owned?"已擁有":price+" 道元"}</span>`;
+    row.addEventListener("click", ()=>{
+      if(!canBuy) return;
+      state.daoyuan -= price;
+      state.inventory.push(it.id);
+      state.journal.push({stage:node.name, title:"店舖", choice:`購入【${it.name}】（${it.tier}品${SLOT_LABEL[it.slot]}）`});
+      renderSidebar();
+      renderShop(node, true);
+    });
+    list.appendChild(row);
+  });
+  wrap.appendChild(list);
+
+  const backBtn = document.createElement("button");
+  backBtn.type = "button"; backBtn.className = "btn-ghost"; backBtn.style.marginTop = "16px";
+  backBtn.textContent = "← 離開店舖";
+  backBtn.addEventListener("click", ()=>{ shopOffer = null; renderTownGrid(node); });
+  wrap.appendChild(backBtn);
+  renderSidebar();
+}
+
+function renderSect(node){
+  document.getElementById("story-card").classList.remove("trial-card");
+  document.getElementById("result-box").classList.add("hide");
+  document.getElementById("story-stage").textContent = node.name;
+  document.getElementById("story-index").textContent = "修道院";
+
+  if(!state.pathId){
+    document.getElementById("story-title").textContent = "拜師入門";
+    document.getElementById("story-text").innerHTML = `<p>觀中住持見你氣息未定、尚無宗承，問你欲入何家道途——這將決定你此後神通根骨的取向。</p>`;
+    const wrap = document.getElementById("story-choices");
+    wrap.innerHTML = "";
+    const grid = document.createElement("div");
+    grid.className = "card-grid";
+    PATHS.forEach(p=>{
+      const card = document.createElement("button");
+      card.type = "button"; card.className = "pick-card";
+      card.innerHTML = `<span class="name">${p.name}</span><span class="desc">${p.desc}</span>`;
+      card.addEventListener("click", ()=>{
+        state.pathId = p.id; state.pathName = p.name;
+        if(p.attr) Object.entries(p.attr).forEach(([k,v])=> state[k]+=v);
+        if(p.fame) Object.entries(p.fame).forEach(([k,v])=> state[k]+=v);
+        clampAll();
+        state.journal.push({stage:node.name, title:"拜師入門", choice:`入${p.name}道途`});
+        poiResult(`你於${node.name}的修道院中拜入${p.name}道途，此後神通根骨自有取向。`, p.attr||{}, node);
+      });
+      grid.appendChild(card);
+    });
+    wrap.appendChild(grid);
+    renderSidebar();
+    return;
+  }
+
+  document.getElementById("story-title").textContent = "潛心修行";
+  document.getElementById("story-text").innerHTML = `<p>你於${node.name}的修道院中靜坐片刻，梳理這些日子的心得。</p>`;
+  const wrap = document.getElementById("story-choices");
+  wrap.innerHTML = "";
+  const b = document.createElement("button");
+  b.type = "button"; b.className = "choice-btn";
+  b.textContent = "潛心修行一段時日（耗時 20 日）";
+  b.addEventListener("click", ()=>{
+    advanceTime(20);
+    const gain = {daoyuan:10, chixin:2};
+    applyEffects(gain);
+    state.journal.push({stage:node.name, title:"潛心修行", choice:"於修道院靜心修行"});
+    poiResult("你靜坐修行，心緒澄明，略有所得。", gain, node);
+  });
+  wrap.appendChild(b);
+  renderSidebar();
+}
+
+function renderInn(node){
+  document.getElementById("story-card").classList.remove("trial-card");
+  document.getElementById("result-box").classList.add("hide");
+  document.getElementById("story-stage").textContent = node.name;
+  document.getElementById("story-index").textContent = "客棧";
+  document.getElementById("story-title").textContent = "投宿歇息";
+  document.getElementById("story-text").innerHTML = `<p>客棧掌櫃招呼你打尖住店，一晚安睡，足以緩過連日奔波的疲憊。</p>`;
+  const wrap = document.getElementById("story-choices");
+  wrap.innerHTML = "";
+  const b = document.createElement("button");
+  b.type = "button"; b.className = "choice-btn";
+  b.textContent = "投宿一晚（耗時 3 日，回復元氣）";
+  b.addEventListener("click", ()=>{
+    advanceTime(3);
+    const heal = Math.min(30, 100-state.health);
+    applyEffects({health:heal});
+    state.journal.push({stage:node.name, title:"投宿客棧", choice:"歇息一晚，回復元氣"});
+    poiResult(`你在客棧美美睡了一覺，元氣回復了 ${heal} 點。`, {health:heal}, node);
+  });
+  wrap.appendChild(b);
+  renderSidebar();
 }
 
 /* ===================== 人物 / 紙娃娃 ===================== */
@@ -1385,7 +1692,9 @@ function renderCharacterSheet(){
   const skillList = document.createElement("div");
   skillList.className = "skill-list";
   const learned = unlockedSkills();
-  if(learned.length === 0){
+  if(!state.pathId){
+    skillList.innerHTML = `<div class="skill-row" style="color:var(--muted)">尚未拜入道途，可於城鎮的修道院／宗門處拜師習道。</div>`;
+  } else if(learned.length === 0){
     skillList.innerHTML = `<div class="skill-row" style="color:var(--muted)">尚未有可用技能，境界更進一步後自然通曉。</div>`;
   } else {
     learned.forEach(sk=>{
@@ -1403,8 +1712,11 @@ function renderCharacterSheet(){
   backBtn.type = "button";
   backBtn.className = "btn-ghost";
   backBtn.style.marginTop = "18px";
-  backBtn.textContent = "← 返回地圖";
-  backBtn.addEventListener("click", renderMap);
+  backBtn.textContent = flow.townGrid ? "← 返回城中漫遊" : "← 返回地圖";
+  backBtn.addEventListener("click", ()=>{
+    const node = currentTownNode();
+    if(node){ renderTownGrid(node); } else { renderMap(); }
+  });
   wrap.appendChild(backBtn);
 }
 
@@ -1447,14 +1759,14 @@ function renderItemPicker(slotKey){
 /* ===================== 戰鬥 ===================== */
 let combat = null;
 
-function startCombat(enemyTpl, node){
+function startCombat(enemyTpl, node, context){
   const stat = combatStats();
   combat = {
     enemy: {...enemyTpl, hpCur: enemyTpl.hp},
     hpCur: stat.hpmax, hpMax: stat.hpmax,
     playerBuff:{atkMult:1, defMult:1, spdMult:1, rounds:0},
     enemyDebuff:{atkMult:1, defMult:1, spdMult:1, rounds:0},
-    node, log:[enemyTpl.flavor]
+    node, context: context||"world", log:[enemyTpl.flavor]
   };
   renderCombat();
 }
@@ -1684,9 +1996,12 @@ function combatDefeat(){
 }
 
 function endCombat(opts){
+  const ctx = combat ? combat.context : "world";
+  const node = combat ? combat.node : null;
   combat = null;
   renderSidebar();
   if(state.health<=0){ finishGame(); return; }
+  if(ctx === "town" && flow.townGrid){ renderTownGrid(node); return; }
   flow.movesUsed++;
   afterMove();
 }
@@ -1754,12 +2069,18 @@ function resolveChoice(ev, choice, locationName){
 
 function afterMove(){
   if(flow.stageIdx < STAGE_THRESHOLD.length && state.daoyuan >= STAGE_THRESHOLD[flow.stageIdx]){
+    flow.townGrid = null;
     renderBreakthrough();
     return;
   }
   if(flow.stageIdx >= CULT_STAGES.length || flow.movesUsed >= flow.maxMoves){
+    flow.townGrid = null;
     renderFinale();
     return;
+  }
+  if(flow.townGrid){
+    const node = currentTownNode();
+    if(node){ renderTownGrid(node); return; }
   }
   renderMap();
 }
@@ -1863,15 +2184,13 @@ function finishGame(){
 
 /* ===================== 事件綁定 ===================== */
 document.getElementById("btn-start").addEventListener("click", ()=>{
-  renderOriginGrid(); renderPathGrid(); renderAllocator();
+  renderOriginGrid(); renderAllocator();
   goStep(0);
   showScreen("screen-create");
 });
 document.getElementById("btn-step0-next").addEventListener("click", ()=> goStep(1));
 document.getElementById("btn-step1-back").addEventListener("click", ()=> goStep(0));
-document.getElementById("btn-step1-next").addEventListener("click", ()=> goStep(2));
-document.getElementById("btn-step2-back").addEventListener("click", ()=> goStep(1));
-document.getElementById("btn-step2-next").addEventListener("click", startGame);
+document.getElementById("btn-step1-next").addEventListener("click", startGame);
 document.getElementById("journal-toggle").addEventListener("click", (e)=>{
   const list = document.getElementById("journal-list");
   const willShow = list.classList.contains("hide");
@@ -1879,9 +2198,8 @@ document.getElementById("journal-toggle").addEventListener("click", (e)=>{
   e.target.textContent = (willShow?"▾ 收合":"▸ 展開") + "赤心志（歷程記錄）";
 });
 document.getElementById("btn-restart").addEventListener("click", ()=>{
-  create = {origin:null, path:null, alloc:{gu:0,wu:0,ji:0,ren:0}, poolLeft:8};
+  create = {origin:null, alloc:{gu:0,wu:0,ji:0,ren:0}, poolLeft:8};
   document.getElementById("btn-step0-next").disabled = true;
-  document.getElementById("btn-step1-next").disabled = true;
   showScreen("screen-title");
 });
 
