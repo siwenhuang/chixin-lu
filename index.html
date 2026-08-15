@@ -306,6 +306,22 @@
   .skill-list{display:flex;flex-direction:column;gap:8px;margin-top:10px;}
   .skill-row{border:1px solid var(--line);border-radius:4px;padding:8px 12px;font-family:var(--font-sans);font-size:12.5px;color:var(--ink-soft);}
   .skill-row b{color:var(--ink);font-family:var(--font-serif);font-size:14px;}
+
+  /* ---------- 太虛卷軸 ---------- */
+  .quest-list{display:flex;flex-direction:column;gap:10px;margin-top:6px;}
+  .quest-row{border:1px solid var(--line);border-radius:5px;padding:12px 16px;background:var(--paper-raised);}
+  .quest-row.done{border-color:var(--gold-soft);background:color-mix(in srgb, var(--gold) 10%, var(--paper-raised));}
+  .quest-head{display:flex;justify-content:space-between;align-items:baseline;gap:10px;}
+  .quest-title{font-family:var(--font-serif);font-size:16px;font-weight:700;}
+  .quest-progress{font-family:var(--font-sans);font-size:11.5px;color:var(--muted);white-space:nowrap;}
+  .quest-desc{font-family:var(--font-sans);font-size:12.5px;color:var(--ink-soft);margin:6px 0 10px;line-height:1.7;}
+  .quest-foot{display:flex;justify-content:space-between;align-items:center;gap:10px;}
+  .quest-reward{font-family:var(--font-sans);font-size:11.5px;color:var(--gold);}
+  .quest-claim{
+    appearance:none;border:none;cursor:pointer;background:var(--vermillion);color:#fff5ea;
+    font-family:var(--font-sans);font-weight:600;font-size:12px;padding:7px 16px;border-radius:20px;
+  }
+  .quest-claim:disabled{background:var(--paper-deep);color:var(--muted);cursor:not-allowed;}
   .item-pick-list{display:flex;flex-direction:column;gap:8px;margin-top:14px;}
   .item-row{
     display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;text-align:left;
@@ -977,7 +993,8 @@ function newState(){
     journal:[], finaleSuccess:false, finalStageName:null,
     equipment:{weapon:null, armor:null, accessory:null},
     inventory:[],
-    age:16, days:0
+    age:16, days:0,
+    combatWins:0, eliteWins:0, townsVisited:[], questsClaimed:[]
   };
 }
 
@@ -1053,6 +1070,34 @@ const ELITE_ENEMIES = [
   {id:"demon", name:"邊荒游魔", hp:90, atk:16, def:7, spd:8, daoyuan:[25,40], itemChance:.4, itemPool:["w2","a2","ac2","w3","w4"], flavor:"一頭邊荒游魔自陰霾中撲出，周身縈繞著不祥的氣息。"},
   {id:"guardian", name:"石像守衛", hp:110, atk:14, def:12, spd:4, daoyuan:[30,45], itemChance:.45, itemPool:["a3","w3","ac3","a4"], flavor:"一尊沉睡的仙宮石像守衛甦醒，緩慢卻不容小覷。"},
   {id:"ashura", name:"修羅武士", hp:85, atk:19, def:6, spd:9, daoyuan:[28,42], itemChance:.42, itemPool:["w3","ac3","a3","ac4"], flavor:"一名修羅武士獨自遊蕩至此，見人便是嗜殺的目光。"}
+];
+
+/* ===================== 太虛卷軸（懸賞任務） ===================== */
+const QUESTS = [
+  { id:"q_kaimai", title:"初入超凡", desc:"順利開脈，正式踏入九品游脈境。",
+    check:()=> flow.stageIdx>=1, progress:()=> flow.stageIdx>=1?"已達成":"尚未開脈",
+    reward:{daoyuan:20}, rewardText:"道元 +20" },
+  { id:"q_tenglong", title:"小有所成", desc:"修為精進，踏入六品騰龍境。",
+    check:()=> flow.stageIdx>=4, progress:()=> `${Math.min(flow.stageIdx,4)}/4 境`,
+    reward:{daoyuan:40}, rewardText:"道元 +40" },
+  { id:"q_baishi", title:"拜入師門", desc:"於城鎮修道院中拜師，選定此生道途。",
+    check:()=> !!state.pathId, progress:()=> state.pathId?"已達成":"尚未拜師",
+    reward:{daoyuan:15, chixin:4}, rewardText:"道元 +15、赤心 +4" },
+  { id:"q_travel", title:"行遍列國", desc:"遊歷至少五座城鎮，見識各地風土人情。",
+    check:()=> state.townsVisited.length>=5, progress:()=> `${Math.min(state.townsVisited.length,5)}/5 城`,
+    reward:{ren:1, daoyuan:15}, rewardText:"人脈 +1、道元 +15" },
+  { id:"q_combat3", title:"除暴安良", desc:"擊敗三場遭遇戰，還世道幾分清淨。",
+    check:()=> state.combatWins>=3, progress:()=> `${Math.min(state.combatWins,3)}/3 場`,
+    reward:{jianghu:15, daoyuan:20}, rewardText:"江湖聲望 +15、道元 +20" },
+  { id:"q_elite", title:"斬妖除魔", desc:"於邊荒或隕仙林等凶險絕地，擊敗一名強敵。",
+    check:()=> state.eliteWins>=1, progress:()=> state.eliteWins>=1?"已達成":"尚未於絕地建功",
+    reward:{daotong:15, daoyuan:25}, rewardText:"道統聲望 +15、道元 +25" },
+  { id:"q_gear3", title:"富甲一方", desc:"集齊三件裝備，武裝己身。",
+    check:()=> state.inventory.length>=3, progress:()=> `${Math.min(state.inventory.length,3)}/3 件`,
+    reward:{daoyuan:25}, rewardText:"道元 +25" },
+  { id:"q_chixin", title:"赤子之心", desc:"堅守本心，赤心值達到八十以上。",
+    check:()=> state.chixin>=80, progress:()=> `赤心 ${Math.min(state.chixin,80)}/80`,
+    reward:{daotong:10, chixin:5}, rewardText:"道統聲望 +10、赤心 +5" }
 ];
 
 /* ===================== 畫面切換 ===================== */
@@ -1234,13 +1279,21 @@ function renderMap(){
     <span><i class="legend-dot lock"></i>修為未足</span>`;
   wrap.appendChild(legend);
 
+  const btnRow2 = document.createElement("div");
+  btnRow2.style.display = "flex"; btnRow2.style.gap = "10px"; btnRow2.style.marginTop = "14px"; btnRow2.style.flexWrap = "wrap";
   const charBtn = document.createElement("button");
   charBtn.type = "button";
   charBtn.className = "btn-ghost";
-  charBtn.style.marginTop = "14px";
   charBtn.textContent = "查看人物與裝備";
   charBtn.addEventListener("click", renderCharacterSheet);
-  wrap.appendChild(charBtn);
+  btnRow2.appendChild(charBtn);
+  const questBtn = document.createElement("button");
+  questBtn.type = "button";
+  questBtn.className = "btn-ghost";
+  questBtn.textContent = "太虛卷軸（任務）";
+  questBtn.addEventListener("click", renderQuestBoard);
+  btnRow2.appendChild(questBtn);
+  wrap.appendChild(btnRow2);
 }
 
 const MAP_REGION_LABELS = [
@@ -1336,6 +1389,7 @@ function travelTo(nodeId){
   renderSidebar();
 
   if(node.type === "town"){
+    if(!state.townsVisited.includes(nodeId)) state.townsVisited.push(nodeId);
     flow.townGrid = {nodeId, x:2, y:4};
     renderTownGrid(node);
     return;
@@ -1439,6 +1493,11 @@ function renderTownGrid(node, note){
   charBtn.textContent = "查看人物與裝備";
   charBtn.addEventListener("click", renderCharacterSheet);
   btnRow.appendChild(charBtn);
+  const questBtn = document.createElement("button");
+  questBtn.type = "button"; questBtn.className = "btn-ghost";
+  questBtn.textContent = "太虛卷軸（任務）";
+  questBtn.addEventListener("click", renderQuestBoard);
+  btnRow.appendChild(questBtn);
   wrap.appendChild(btnRow);
 
   renderSidebar();
@@ -1720,6 +1779,62 @@ function renderCharacterSheet(){
   wrap.appendChild(backBtn);
 }
 
+function backFromOverlay(){
+  const node = currentTownNode();
+  if(node){ renderTownGrid(node); } else { renderMap(); }
+}
+
+function renderQuestBoard(){
+  document.getElementById("story-card").classList.remove("trial-card");
+  document.getElementById("result-box").classList.add("hide");
+  const cs = currentCultStage();
+  document.getElementById("story-stage").textContent = "太虛卷軸";
+  document.getElementById("story-index").textContent = `${cs.rank} ${cs.name}`;
+  document.getElementById("story-title").textContent = "懸賞任務";
+  document.getElementById("story-text").innerHTML = `<p>太虛幻境懸浮的卷軸上，浮現著各方託付的懸賞——達成條件即可回收賞賜，卷軸感應範圍遍及天下，無論身在何處都能查看、領取。</p>`;
+
+  const wrap = document.getElementById("story-choices");
+  wrap.innerHTML = "";
+  const list = document.createElement("div");
+  list.className = "quest-list";
+  QUESTS.forEach(q=>{
+    const claimed = state.questsClaimed.includes(q.id);
+    const met = !claimed && q.check();
+    const row = document.createElement("div");
+    row.className = "quest-row" + (claimed||met ? " done" : "");
+    row.innerHTML = `
+      <div class="quest-head"><span class="quest-title">${q.title}</span><span class="quest-progress">${claimed?"已領賞":q.progress()}</span></div>
+      <div class="quest-desc">${q.desc}</div>
+      <div class="quest-foot"><span class="quest-reward">賞賜：${q.rewardText}</span></div>`;
+    if(!claimed){
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "quest-claim";
+      btn.textContent = met ? "領取賞賜" : "未達成";
+      btn.disabled = !met;
+      btn.addEventListener("click", ()=>{
+        if(!q.check()) return;
+        applyEffects(q.reward);
+        state.questsClaimed.push(q.id);
+        state.journal.push({stage:"太虛卷軸", title:q.title, choice:`領取賞賜：${q.rewardText}`});
+        renderQuestBoard();
+      });
+      row.querySelector(".quest-foot").appendChild(btn);
+    }
+    list.appendChild(row);
+  });
+  wrap.appendChild(list);
+
+  const backBtn = document.createElement("button");
+  backBtn.type = "button";
+  backBtn.className = "btn-ghost";
+  backBtn.style.marginTop = "18px";
+  backBtn.textContent = flow.townGrid ? "← 返回城中漫遊" : "← 返回地圖";
+  backBtn.addEventListener("click", backFromOverlay);
+  wrap.appendChild(backBtn);
+  renderSidebar();
+}
+
 function renderItemPicker(slotKey){
   document.getElementById("story-title").textContent = `選擇${SLOT_LABEL[slotKey]}`;
   const wrap = document.getElementById("story-choices");
@@ -1973,6 +2088,8 @@ function attemptFlee(){
 
 function combatVictory(){
   const e = combat.enemy;
+  state.combatWins++;
+  if(ELITE_ENEMIES.some(x=>x.id===e.id)) state.eliteWins++;
   const gain = e.daoyuan[0] + Math.floor(Math.random()*(e.daoyuan[1]-e.daoyuan[0]+1));
   state.daoyuan += gain;
   let dropText = "";
