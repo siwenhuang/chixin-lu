@@ -1,0 +1,1058 @@
+<meta charset="utf-8">
+<title>赤心錄</title>
+<style>
+  /* ===================== 設計代幣 Design Tokens ===================== */
+  :root{
+    --paper: #ece2c8;
+    --paper-raised: #e2d5ae;
+    --paper-deep: #d8c99b;
+    --ink: #241f16;
+    --ink-soft: #453d2c;
+    --muted: #776a4f;
+    --line: #c3b284;
+    --vermillion: #c3341b;
+    --vermillion-deep: #8f2513;
+    --vermillion-soft: #e2b6a4;
+    --indigo: #2c4a52;
+    --indigo-soft: #6f939a;
+    --gold: #97701f;
+    --gold-soft: #c9a86a;
+    --evil: #5a2f66;
+    --shadow: 0 18px 40px -22px rgba(36,31,22,.45);
+    --font-serif: "Noto Serif TC","Songti TC","PMingLiU","Microsoft JhengHei",serif;
+    --font-sans: "PingFang TC","Noto Sans TC","Microsoft JhengHei","Heiti TC",sans-serif;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --paper: #17161a;
+      --paper-raised: #201e21;
+      --paper-deep: #2a2729;
+      --ink: #ece3cf;
+      --ink-soft: #cabfa4;
+      --muted: #948a75;
+      --line: #3a3530;
+      --vermillion: #d9614a;
+      --vermillion-deep: #ef8672;
+      --vermillion-soft: #4a2a24;
+      --indigo: #86aab1;
+      --indigo-soft: #3c4f52;
+      --gold: #d3b169;
+      --gold-soft: #4a3d22;
+      --evil: #b083c0;
+      --shadow: 0 18px 44px -20px rgba(0,0,0,.6);
+    }
+  }
+  :root[data-theme="dark"]{
+    --paper: #17161a;
+    --paper-raised: #201e21;
+    --paper-deep: #2a2729;
+    --ink: #ece3cf;
+    --ink-soft: #cabfa4;
+    --muted: #948a75;
+    --line: #3a3530;
+    --vermillion: #d9614a;
+    --vermillion-deep: #ef8672;
+    --vermillion-soft: #4a2a24;
+    --indigo: #86aab1;
+    --indigo-soft: #3c4f52;
+    --gold: #d3b169;
+    --gold-soft: #4a3d22;
+    --evil: #b083c0;
+    --shadow: 0 18px 44px -20px rgba(0,0,0,.6);
+  }
+
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--paper);
+    color:var(--ink);
+    font-family:var(--font-serif);
+    -webkit-font-smoothing:antialiased;
+    text-wrap:pretty;
+  }
+  #app{max-width:1040px;margin:0 auto;padding:28px 18px 64px;}
+  .hide{display:none !important;}
+  h1,h2,h3{text-wrap:balance;margin:0;}
+  button{font-family:var(--font-sans);}
+  ::selection{background:var(--vermillion-soft);}
+
+  /* ---------- 印章 emblem ---------- */
+  .seal{
+    width:46px;height:46px;flex:none;
+    display:flex;align-items:center;justify-content:center;
+    background:var(--vermillion);color:#fff5ea;
+    font-family:var(--font-serif);font-weight:700;font-size:22px;
+    border-radius:4px;
+    box-shadow:var(--shadow);
+    transform:rotate(-3deg);
+    letter-spacing:0;
+  }
+
+  /* ---------- 頂部列 ---------- */
+  .topbar{display:flex;align-items:center;gap:14px;margin-bottom:22px;}
+  .topbar .titles{display:flex;flex-direction:column;gap:2px;}
+  .topbar h1{font-size:22px;letter-spacing:.06em;}
+  .topbar .sub{font-size:12px;color:var(--muted);font-family:var(--font-sans);letter-spacing:.08em;}
+
+  /* ===================== 標題畫面 ===================== */
+  #screen-title{
+    display:flex;flex-direction:column;align-items:center;text-align:center;
+    padding:56px 16px 24px;gap:26px;
+  }
+  #screen-title .seal{width:74px;height:74px;font-size:34px;transform:rotate(-4deg);}
+  #screen-title h1{font-size:clamp(32px,6vw,48px);letter-spacing:.14em;}
+  #screen-title .tagline{font-family:var(--font-sans);color:var(--vermillion);letter-spacing:.32em;font-size:13px;}
+  #screen-title .lede{max-width:36em;font-size:16px;line-height:2;color:var(--ink-soft);}
+  #screen-title .lede b{color:var(--ink);font-weight:600;}
+  .btn-primary{
+    appearance:none;border:none;cursor:pointer;
+    background:var(--vermillion);color:#fff5ea;
+    font-family:var(--font-sans);font-weight:600;font-size:15px;letter-spacing:.08em;
+    padding:14px 40px;border-radius:3px;box-shadow:var(--shadow);
+    transition:transform .15s ease, background .15s ease;
+  }
+  .btn-primary:hover{background:var(--vermillion-deep);transform:translateY(-1px);}
+  .btn-primary:active{transform:translateY(0);}
+  .disclaimer{
+    font-family:var(--font-sans);font-size:11.5px;color:var(--muted);
+    max-width:32em;border-top:1px solid var(--line);padding-top:16px;margin-top:8px;line-height:1.8;
+  }
+
+  /* ===================== 建角畫面 ===================== */
+  #screen-create{padding:8px 4px 40px;}
+  .create-step{display:none;flex-direction:column;gap:20px;}
+  .create-step.active{display:flex;}
+  .step-eyebrow{font-family:var(--font-sans);font-size:12px;letter-spacing:.28em;color:var(--vermillion);text-transform:uppercase;}
+  .step-head h2{font-size:26px;}
+  .step-head p{margin:6px 0 0;color:var(--muted);font-size:14px;font-family:var(--font-sans);}
+
+  .card-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;}
+  .pick-card{
+    text-align:left;cursor:pointer;border:1px solid var(--line);background:var(--paper-raised);
+    border-radius:5px;padding:14px 16px;display:flex;flex-direction:column;gap:6px;
+    transition:border-color .15s ease, transform .15s ease, box-shadow .15s ease;
+  }
+  .pick-card:hover{transform:translateY(-2px);box-shadow:var(--shadow);}
+  .pick-card.selected{border-color:var(--vermillion);box-shadow:0 0 0 1px var(--vermillion) inset;}
+  .pick-card .name{font-size:17px;font-weight:700;}
+  .pick-card .place{font-family:var(--font-sans);font-size:11px;color:var(--vermillion);letter-spacing:.06em;}
+  .pick-card .desc{font-size:13px;color:var(--ink-soft);line-height:1.7;}
+  .pick-card .tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:2px;}
+  .tag{font-family:var(--font-sans);font-size:10.5px;color:var(--muted);border:1px solid var(--line);border-radius:20px;padding:2px 9px;}
+
+  .allocator{background:var(--paper-raised);border:1px solid var(--line);border-radius:5px;padding:18px 20px;display:flex;flex-direction:column;gap:14px;}
+  .pool-line{font-family:var(--font-sans);font-size:13px;color:var(--muted);display:flex;justify-content:space-between;}
+  .pool-line b{color:var(--vermillion);font-variant-numeric:tabular-nums;}
+  .attr-row{display:flex;align-items:center;gap:14px;}
+  .attr-row .lbl{width:96px;font-size:15px;font-weight:600;}
+  .attr-row .bar-track{flex:1;height:8px;background:var(--paper-deep);border-radius:4px;overflow:hidden;}
+  .attr-row .bar-fill{height:100%;background:var(--indigo);}
+  .attr-row .val{width:26px;text-align:center;font-variant-numeric:tabular-nums;font-weight:700;}
+  .stepper{display:flex;gap:6px;}
+  .stepper button{
+    width:26px;height:26px;border-radius:50%;border:1px solid var(--line);background:var(--paper);
+    color:var(--ink);cursor:pointer;font-size:14px;line-height:1;
+  }
+  .stepper button:disabled{opacity:.35;cursor:not-allowed;}
+
+  .step-actions{display:flex;justify-content:space-between;align-items:center;margin-top:4px;}
+  .btn-ghost{
+    appearance:none;background:none;border:1px solid var(--line);color:var(--ink-soft);
+    font-family:var(--font-sans);font-size:13px;padding:10px 20px;border-radius:3px;cursor:pointer;
+  }
+  .btn-ghost:hover{border-color:var(--ink-soft);}
+
+  /* ===================== 遊戲畫面 ===================== */
+  #screen-game{display:grid;grid-template-columns:250px 1fr;gap:20px;align-items:start;}
+  @media (max-width:760px){
+    #screen-game{grid-template-columns:1fr;}
+    .sidebar{position:static;}
+  }
+
+  .panel{background:var(--paper-raised);border:1px solid var(--line);border-radius:6px;padding:16px 17px;}
+  .sidebar{display:flex;flex-direction:column;gap:14px;position:sticky;top:16px;}
+  .id-line{font-family:var(--font-sans);font-size:12px;color:var(--muted);}
+  .id-line b{color:var(--ink);font-family:var(--font-serif);font-size:15px;display:block;margin-top:2px;}
+
+  .stage-track{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px;}
+  .stage-dot{width:11px;height:11px;border-radius:50%;background:var(--paper-deep);border:1px solid var(--line);}
+  .stage-dot.done{background:var(--gold);border-color:var(--gold);}
+  .stage-dot.now{background:var(--vermillion);border-color:var(--vermillion);}
+
+  .meter-label{display:flex;justify-content:space-between;font-family:var(--font-sans);font-size:11.5px;color:var(--muted);margin-bottom:3px;}
+  .meter-label b{color:var(--ink);font-variant-numeric:tabular-nums;}
+  .meter-track{height:6px;border-radius:3px;background:var(--paper-deep);overflow:hidden;margin-bottom:10px;}
+  .meter-fill{height:100%;border-radius:3px;}
+  .m-health .meter-fill{background:var(--vermillion);}
+  .m-chixin .meter-fill{background:var(--gold);}
+  .m-miao .meter-fill{background:var(--indigo);}
+  .m-jh .meter-fill{background:#a8763a;}
+  .m-dt .meter-fill{background:#4d7a6b;}
+  .m-xie .meter-fill{background:var(--evil);}
+
+  .attr-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px 12px;font-family:var(--font-sans);font-size:13px;}
+  .attr-grid div{display:flex;justify-content:space-between;}
+  .attr-grid b{font-variant-numeric:tabular-nums;}
+
+  .journal-toggle{font-family:var(--font-sans);font-size:12px;color:var(--vermillion);background:none;border:none;cursor:pointer;text-align:left;padding:0;}
+  .journal-list{list-style:none;margin:8px 0 0;padding:0;display:flex;flex-direction:column;gap:6px;max-height:220px;overflow-y:auto;}
+  .journal-list li{font-size:12.5px;color:var(--ink-soft);border-left:2px solid var(--line);padding-left:8px;line-height:1.6;}
+
+  .story-card{min-height:420px;display:flex;flex-direction:column;}
+  .story-eyebrow{font-family:var(--font-sans);font-size:11.5px;letter-spacing:.24em;color:var(--vermillion);text-transform:uppercase;display:flex;justify-content:space-between;}
+  .story-title{font-size:24px;margin:10px 0 14px;}
+  .story-text{font-size:16px;line-height:2;color:var(--ink-soft);flex:1;}
+  .story-text p{margin:0 0 1em;}
+  .choices{display:flex;flex-direction:column;gap:10px;margin-top:20px;}
+  .choice-btn{
+    text-align:left;border:1px solid var(--line);background:var(--paper);color:var(--ink);
+    border-radius:4px;padding:13px 16px;cursor:pointer;font-family:var(--font-sans);font-size:14px;line-height:1.6;
+    transition:border-color .15s ease, background .15s ease;
+  }
+  .choice-btn:hover{border-color:var(--vermillion);background:var(--paper-raised);}
+  .choice-btn .cn{color:var(--muted);font-size:11.5px;margin-right:6px;}
+
+  .result-box{margin-top:18px;padding:14px 16px;background:var(--paper);border:1px dashed var(--line);border-radius:4px;}
+  .result-box p{margin:0 0 10px;line-height:1.9;font-size:15px;}
+  .effect-chips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;}
+  .chip{font-family:var(--font-sans);font-size:11px;border-radius:20px;padding:3px 10px;border:1px solid var(--line);}
+  .chip.pos{color:var(--indigo);border-color:var(--indigo-soft);}
+  .chip.neg{color:var(--vermillion);border-color:var(--vermillion-soft);}
+
+  .trial-card{border:1px solid var(--gold-soft);background:linear-gradient(180deg,var(--paper-raised),var(--paper));}
+  .trial-chance{font-family:var(--font-sans);font-size:12.5px;color:var(--gold);margin:6px 0 16px;}
+
+  /* ===================== 結局畫面 ===================== */
+  #screen-end{display:flex;flex-direction:column;gap:22px;padding:20px 4px 40px;}
+  .end-hero{text-align:center;display:flex;flex-direction:column;align-items:center;gap:10px;}
+  .end-hero .seal{width:60px;height:60px;font-size:28px;}
+  .end-hero h2{font-size:30px;}
+  .end-hero .end-sub{font-family:var(--font-sans);color:var(--vermillion);letter-spacing:.14em;font-size:13px;}
+  .end-body{max-width:38em;margin:0 auto;font-size:16px;line-height:2;color:var(--ink-soft);}
+  .end-recap{max-width:38em;margin:0 auto;width:100%;}
+  .end-recap h3{font-size:14px;font-family:var(--font-sans);letter-spacing:.16em;color:var(--muted);margin-bottom:10px;}
+  .end-actions{display:flex;justify-content:center;margin-top:6px;}
+
+  @media (prefers-reduced-motion: reduce){
+    .btn-primary,.pick-card{transition:none;}
+  }
+  a{color:var(--vermillion);}
+</style>
+
+<div id="app">
+
+  <!-- ============ 標題畫面 ============ -->
+  <section id="screen-title">
+    <div class="seal">赤</div>
+    <div>
+      <div class="tagline">世 · 情何以甚《赤心巡天》世界觀衍生</div>
+      <h1>赤 心 錄</h1>
+    </div>
+    <p class="lede">
+      道曆新啟，六雄並立，超凡之世弱肉強食。<br>
+      你是凡塵中一介無名之輩，將要從<b>奠基</b>踏起，一路叩問<b>九品游脈</b>至<b>三品神臨</b>的證道之途。<br>
+      每一次抉擇，都會刻進你的<b>赤心</b>——是把自己當人看，也把別人當人看，還是在亂世裡活成了自己曾經厭惡的模樣。
+    </p>
+    <button class="btn-primary" id="btn-start">起 程</button>
+    <p class="disclaimer">
+      本作為《赤心巡天》讀者衍生的非商業文字遊戲，僅借用其修行境界、國度勢力等世界觀框架；
+      遊戲中的主角、際遇與情節皆為原創演繹，與原著具體劇情無涉，亦不代表原作者意見。原作者：情何以甚。
+    </p>
+  </section>
+
+  <!-- ============ 建角畫面 ============ -->
+  <section id="screen-create" class="hide">
+    <div class="topbar"><div class="seal">赤</div><div class="titles"><h1>赤心錄</h1><span class="sub">立命 · 定基</span></div></div>
+
+    <div class="create-step active" data-step="0">
+      <div class="step-head"><div class="step-eyebrow">第一步</div><h2>你出身何處？</h2><p>出身決定你最初的際遇、人脈根基，與眾人看你的眼光。</p></div>
+      <div class="card-grid" id="origin-grid"></div>
+      <div class="step-actions"><span></span><button class="btn-primary" id="btn-step0-next" disabled>下一步</button></div>
+    </div>
+
+    <div class="create-step" data-step="1">
+      <div class="step-head"><div class="step-eyebrow">第二步</div><h2>你所信奉的道途？</h2><p>諸子百家，各有取向，將影響你日後神通根骨與立身之道。</p></div>
+      <div class="card-grid" id="path-grid"></div>
+      <div class="step-actions"><button class="btn-ghost" id="btn-step1-back">上一步</button><button class="btn-primary" id="btn-step1-next" disabled>下一步</button></div>
+    </div>
+
+    <div class="create-step" data-step="2">
+      <div class="step-head"><div class="step-eyebrow">第三步</div><h2>分配你的資質</h2><p>根骨主體魄、悟性主參悟、機緣主際遇、人脈主人情——尚有 <span id="pool-left">8</span> 點可分配。</p></div>
+      <div class="allocator" id="allocator"></div>
+      <div class="step-actions"><button class="btn-ghost" id="btn-step2-back">上一步</button><button class="btn-primary" id="btn-step2-next">奠基入世</button></div>
+    </div>
+  </section>
+
+  <!-- ============ 遊戲畫面 ============ -->
+  <section id="screen-game" class="hide">
+    <aside class="panel sidebar">
+      <div>
+        <div class="id-line">出身 · 道途<b id="side-id">—</b></div>
+        <div class="stage-track" id="stage-track"></div>
+      </div>
+      <div>
+        <div class="meter-label">元氣 <b id="v-health">100</b></div>
+        <div class="meter-track m-health"><div class="meter-fill" id="f-health" style="width:100%"></div></div>
+        <div class="meter-label">赤心 <b id="v-chixin">50</b></div>
+        <div class="meter-track m-chixin"><div class="meter-fill" id="f-chixin" style="width:50%"></div></div>
+        <div class="meter-label">道元 <b id="v-daoyuan">0</b></div>
+      </div>
+      <div>
+        <div class="meter-label">廟堂聲望 <b id="v-miao">0</b></div>
+        <div class="meter-track m-miao"><div class="meter-fill" id="f-miao" style="width:0%"></div></div>
+        <div class="meter-label">江湖聲望 <b id="v-jh">0</b></div>
+        <div class="meter-track m-jh"><div class="meter-fill" id="f-jh" style="width:0%"></div></div>
+        <div class="meter-label">道統聲望 <b id="v-dt">0</b></div>
+        <div class="meter-track m-dt"><div class="meter-fill" id="f-dt" style="width:0%"></div></div>
+        <div class="meter-label">邪道好感 <b id="v-xie">0</b></div>
+        <div class="meter-track m-xie"><div class="meter-fill" id="f-xie" style="width:0%"></div></div>
+      </div>
+      <div class="attr-grid" id="attr-grid"></div>
+      <div>
+        <button class="journal-toggle" id="journal-toggle">▸ 展開赤心志（歷程記錄）</button>
+        <ul class="journal-list hide" id="journal-list"></ul>
+      </div>
+    </aside>
+
+    <main class="panel story-card" id="story-card">
+      <div class="story-eyebrow"><span id="story-stage">奠基</span><span id="story-index"></span></div>
+      <h2 class="story-title" id="story-title">—</h2>
+      <div class="story-text" id="story-text"></div>
+      <div class="choices" id="story-choices"></div>
+      <div class="result-box hide" id="result-box">
+        <p id="result-text"></p>
+        <div class="effect-chips" id="result-chips"></div>
+        <button class="btn-primary" id="btn-continue">繼續</button>
+      </div>
+    </main>
+  </section>
+
+  <!-- ============ 結局畫面 ============ -->
+  <section id="screen-end" class="hide">
+    <div class="end-hero">
+      <div class="seal">終</div>
+      <span class="end-sub" id="end-sub">終局</span>
+      <h2 id="end-title">—</h2>
+    </div>
+    <div class="end-body" id="end-body"></div>
+    <div class="end-recap">
+      <h3>赤心志 · 一生回望</h3>
+      <ul class="journal-list" id="end-journal" style="max-height:none;"></ul>
+    </div>
+    <div class="end-actions"><button class="btn-primary" id="btn-restart">再入紅塵，重新起程</button></div>
+  </section>
+
+</div>
+
+<script>
+(function(){
+"use strict";
+
+/* ===================== 資料 Data ===================== */
+const ATTR_LABEL = {gu:"根骨", wu:"悟性", ji:"機緣", ren:"人脈"};
+
+const ORIGINS = [
+  {id:"jing", name:"景國", place:"中域 · 天京", desc:"中樞世家出身，自幼見慣玉京、大羅、蓬萊三系仪轨往來，眼界高，但也早早學會了看人臉色行事。", attr:{ren:2}, fame:{miao:15}, tags:["世家","廟堂"]},
+  {id:"qi", name:"齊國", place:"東域 · 臨淄", desc:"商賈之家出身，精於算計、擅察人心，臨淄的市井繁華教會你一件事：機緣從不等人。", attr:{ji:2}, fame:{miao:10,jianghu:5}, tags:["商賈","機緣"]},
+  {id:"chu", name:"楚國", place:"南域 · 郢都", desc:"世族子弟，自小浸淫「唯楚術甲天下」的才學風氣，也見慣了世家恩怨快意紛爭。", attr:{wu:2}, fame:{jianghu:15}, tags:["世族","才學"]},
+  {id:"qin", name:"秦國", place:"西境 · 邊郡", desc:"軍戶出身，尚黑重法的秦國治下，你自幼隨長輩操練，筋骨遠比同齡人紮實。", attr:{gu:2}, fame:{miao:15}, tags:["軍戶","法度"]},
+  {id:"jingzhou", name:"荊國", place:"北域 · 計都", desc:"軍庭帝國的尋常士卒之後，袍澤情義比什麼都重，鐵血鑄成了你的筋骨與脾氣。", attr:{gu:2}, fame:{jianghu:10,miao:5}, tags:["軍庭","鐵血"]},
+  {id:"mu", name:"牧國", place:"北域 · 神都", desc:"政教合一的牧國治下，蒼圖神教信仰浸潤了你的成長，你隱約相信命格自有所歸。", attr:{ji:2}, fame:{daotong:15}, tags:["神權","信仰"]},
+  {id:"zhuang", name:"莊國", place:"西境 · 楓林鎮", desc:"道屬小國的寒門子弟，父母是尋常藥鋪掌櫃，家境清貧，卻自小被教導：人窮，心不能窮。", attr:{gu:1,wu:1,ji:1,ren:1}, fame:{}, chixin:10, tags:["寒門","均衡"]}
+];
+
+const PATHS = [
+  {id:"dao", name:"道家", desc:"潛心問道，求長生久視、清靜無為之要，性子最是沉得住氣。", attr:{wu:2,ji:1}, fame:{daotong:15}},
+  {id:"ru", name:"儒家", desc:"修身齊家，以仁禮立身，信「己所不欲，勿施於人」，天生善於凝聚人心。", attr:{ren:2,wu:1}, fame:{miao:15}},
+  {id:"mo", name:"墨家", desc:"兼愛非攻，重然諾、輕生死，墨門弟子向來吃苦在前，動起手來也絕不含糊。", attr:{gu:2,ren:1}, fame:{jianghu:10,daotong:5}},
+  {id:"fa", name:"法家", desc:"崇尚刑名律法，賞罰分明、雷厲風行，做事從不拖泥帶水。", attr:{gu:1,wu:2}, fame:{miao:10,jianghu:5}},
+  {id:"bing", name:"兵家", desc:"深諳兵勢韜略，信「以戰止戈」，行事果決，遇事先算三步。", attr:{gu:2,ji:1}, fame:{jianghu:15}},
+  {id:"shang", name:"商家", desc:"取信於市，汲汲於利卻不失義，懂得審時度勢、待價而沽。", attr:{ji:2,ren:1}, fame:{jianghu:5,miao:5}}
+];
+
+/* 每個事件 choices 的 effects 可用鍵：gu wu ji ren daoyuan chixin health miao jianghu daotong xie */
+const STAGES = [
+  {
+    key:"dianji", rank:"—", name:"奠基",
+    intro:"奠基是入品前的水磨階段，養氣調息、驗證開脈根基，全無超凡戰力可言，卻是往後一切的地基。心急吃不了熱豆腐，唯有沉住氣。",
+    events:[
+      { title:"藥鋪裡的抉擇",
+        text:"你在藥鋪學徒時，一名遊方道人塞給你一枚來歷不明的「開脈丹」，聲稱能助你早日開脈，卻要你替他跑一趟辨不清底細的差事。",
+        choices:[
+          {label:"收下丹藥，先辦差事再說", cn:"機緣", result:"你把丹藥貼身收好，那道人的差事辦得心驚膽戰，好在有驚無險，你也因此多長了幾分見識。", effects:{ji:1,daoyuan:8,health:-4}},
+          {label:"婉拒厚禮，憑自己本事熬", cn:"赤心", result:"你把丹藥推了回去，寧可多花幾年苦功也不欠來歷不明的人情。道人只是笑了笑，說你這份執拗，將來未必是壞事。", effects:{chixin:6,gu:1}},
+          {label:"打聽清楚差事內情再答應", cn:"悟性", result:"你多留了個心眼，細細盤問，發現那差事牽涉一樁郡縣舊案，你避開了麻煩，也算長了眼力。", effects:{wu:1,ji:1}}
+        ]},
+      { title:"拳腳切磋",
+        text:"鎮上一名走鏢的漢子見你筋骨尚可，邀你切磋拳腳，圍觀的街坊起了哄，說輸的人要請客。",
+        choices:[
+          {label:"硬碰硬地打一場", cn:"根骨", result:"你被結結實實摔了幾跤，卻也摸清了自己的底子，那漢子倒是拍著你的肩膀說「有種」。", effects:{gu:2,health:-6}},
+          {label:"以巧勁避重就輕", cn:"悟性", result:"你避實擊虛，雖未必贏得漂亮，卻讓那漢子高看了幾分，直說你是塊讀書練武的料。", effects:{wu:2}},
+          {label:"笑著認輸，請客了事", cn:"人脈", result:"你不逞一時之勇，反倒因這份爽快交下了幾個朋友，往後鎮上有些消息，總能先你一步聽見。", effects:{ren:2}}
+        ]},
+      { title:"資助的分量",
+        text:"當地一戶小有名望的人家願意資助你修行資材，條件是你日後須以他家馬首是瞻，替他們辦事。",
+        choices:[
+          {label:"接受資助，先活下去再說", cn:"廟堂", result:"你接下了這份人情，資材確實讓你少走許多彎路，只是那家人的名字，此後總在你耳邊縈繞。", effects:{daoyuan:15,miao:8,chixin:-4}},
+          {label:"婉拒，靠自己一步步攢", cn:"赤心", result:"你謝絕了好意，日子過得更緊巴，但夜裡睡得踏實——你不欠誰的。", effects:{chixin:8,health:-3}},
+          {label:"提出對等交換而非依附", cn:"人脈", result:"你提出以勞力換資材、不簽賣身契的條件，那家人略感意外，倒也應了下來，彼此留了分寸。", effects:{ren:2,daoyuan:6}}
+        ]},
+      { title:"夜讀",
+        text:"入夜後，你就著油燈翻閱手邊唯一的一卷典籍，字裡行間似有若無地印證著你所信奉的道途。",
+        choices:[
+          {label:"逐字推敲，力求甚解", cn:"悟性", result:"你熬紅了眼，卻也把那卷典籍的道理嚼透了幾分，往後遇事，總能多想一層。", effects:{wu:2,health:-2}},
+          {label:"只取大意，早些歇息", cn:"根骨", result:"你不強求甚解，把身子養好才是根本，第二天精神奕奕，練起拳腳也格外扎實。", effects:{gu:1,health:4}},
+          {label:"抄錄一份送給同窗", cn:"人脈", result:"你多費了些工夫謄抄，換來同窗一份真心相待，日後想借書問學，總有人樂意幫忙。", effects:{ren:2}}
+        ]}
+    ],
+    breakthrough:{
+      name:"開脈：叩問脊柱大龍",
+      text:"脊柱如人體大龍，開脈之際連通全身、匯聚而生道脈——這是每一個凡人叩問超凡之門的第一步，十人九不成，成則脫胎換骨。",
+      attr:"gu"
+    }
+  },
+  {
+    key:"youmai", rank:"九品", name:"游脈境",
+    intro:"開脈之後，你正式列入超凡之流。沖脈以道脈調動氣血、生成道元，再以神念布列陣點——這是九品游脈境的修行日常，也是你第一次真正踏入這個弱肉強食的世道。",
+    events:[
+      { title:"招攬的手",
+        text:"一名自稱代表某方勢力的人找上門，語氣客氣卻帶著審視，想知道你日後是願入朝為官、闖蕩江湖，還是一心求道。",
+        choices:[
+          {label:"表態願入官府體系", cn:"廟堂", result:"你點頭應下，對方臉上露出滿意的神色，遞給你一份引薦信物。廟堂之路，從今日起算是沾了邊。", effects:{miao:12,daoyuan:6}},
+          {label:"直言只想快意江湖", cn:"江湖", result:"你笑著回絕了體制內的邀約，說自己志不在此。那人倒也不惱，反倒多敬你三分血性。", effects:{jianghu:12}},
+          {label:"表明一心求道，無意站隊", cn:"道統", result:"你說自己修行尚淺，不敢奢談站隊，只想先把根基打牢。對方聞言若有所思，留下一句「你倒是明白」。", effects:{daotong:12}}
+        ]},
+      { title:"開脈丹的黑市",
+        text:"你無意間撞見一樁私下交易——有人在低價兜售來路不明的開脈丹，買方多是付不起正價的寒門子弟。",
+        choices:[
+          {label:"出手揭發這樁交易", cn:"赤心", result:"你捅破了這層窗戶紙，那些劣質丹藥被沒收，雖得罪了背後的人，卻也讓幾個寒門孩子免遭其害。", effects:{chixin:10,jianghu:6,xie:-4}},
+          {label:"睜一隻眼閉一隻眼", cn:"江湖", result:"你選擇不多管閒事，那筆交易照常進行。你告訴自己，這世道本就如此，管不過來。", effects:{chixin:-6,daoyuan:5}},
+          {label:"私下買下丹藥銷毀", cn:"廟堂", result:"你掏光了積蓄買下那批丹藥，當場銷毀，雖肉疼，卻睡得安穩。賣家恨恨地記下了你的臉。", effects:{chixin:8,daoyuan:-10,xie:6}}
+        ]},
+      { title:"太虛幻境初體驗",
+        text:"你第一次踏入太虛幻境的論劍台，對手是個看似普通卻招式老辣的游脈修士，圍觀者不少。",
+        choices:[
+          {label:"全力搏一場勝負", cn:"根骨", result:"你拼盡氣血，堪堪險勝，論劍台上的積分讓你在同輩中小有名氣。", effects:{gu:1,daoyuan:12,health:-6}},
+          {label:"以智取巧，穩守待變", cn:"悟性", result:"你看穿對方招式的破綻，以巧破力，贏得不算漂亮，卻也贏得踏實。", effects:{wu:2,daoyuan:8}},
+          {label:"點到為止，交個朋友", cn:"人脈", result:"你半途罷手抱拳致意，對方愣了愣，隨後大笑，此後倒成了偶爾切磋的道友。", effects:{ren:2}}
+        ]},
+      { title:"同門的私怨",
+        text:"同宗門中兩名師兄弟因一件功勞歸屬鬧得不可開交，都想拉你評理站隊。",
+        choices:[
+          {label:"據理直言，不偏不倚", cn:"赤心", result:"你把是非攤開來講，雖兩邊都不算討好，卻也讓旁人高看你一分公道心。", effects:{chixin:6,ren:1}},
+          {label:"順勢站隊，交好強者", cn:"人脈", result:"你選了看起來更有前途的一方，那人事後投桃報李，給了你些許照拂。", effects:{ren:2,daoyuan:6,chixin:-3}},
+          {label:"藉口修行要緊，避而不見", cn:"機緣", result:"你託辭潛修，避開了這攤渾水，倒也因此多出時間精進，只是兩人此後看你都淡了幾分。", effects:{ji:1,daoyuan:5}}
+        ]}
+    ],
+    breakthrough:{name:"沖脈：小周天雛形", text:"道旋初成，以神念馭元、布列陣點，沖脈循環往復——你要嘗試讓道脈真靈第一次在體內真正遊躍起來。", attr:"wu"}
+  },
+  {
+    key:"zhoutian", rank:"八品", name:"周天境",
+    intro:"通天宮內三重道旋構成「小周天」，三重小周天合為「大周天」。你的修行開始牽動更多人的目光，列國博弈的邊角，也悄悄映進了你的視野。",
+    events:[
+      { title:"列國游歷",
+        text:"你隨商隊游歷數國，親眼見到開脈丹分配不均之下，尋常人家為了一線超凡的機會傾家蕩產。",
+        choices:[
+          {label:"傾力資助幾戶寒門", cn:"赤心", result:"你掏出隨身道元石換了些丹藥資助沿途人家，錢財散盡，心裡卻踏實——你沒有把自己活成看不見他人的人。", effects:{chixin:10,daoyuan:-10,jianghu:6}},
+          {label:"記下見聞，日後圖謀更大改變", cn:"悟性", result:"你把這些見聞一一記下，告訴自己這不是靠一人之力能改變的事，總有一天要站到能撬動局面的位置上。", effects:{wu:1,miao:6}},
+          {label:"視若無睹，專心趕路", cn:"機緣", result:"你把心一橫，只當沒看見。這世道從不缺可憐人，你若事事動心，早晚被拖垮。", effects:{chixin:-8,ji:1}}
+        ]},
+      { title:"同代論道",
+        text:"太虛幻境的角樓裡，一位同輩天驕主動邀你論道切磋，言談間鋒芒內斂，顯是個不容小覷的人物。",
+        choices:[
+          {label:"傾囊相授，坦誠以對", cn:"人脈", result:"你們相談甚歡，各自道途雖不同，卻惺惺相惜，日後在太虛閣的甄選中，這份交情或許用得上。", effects:{ren:2,jianghu:6}},
+          {label:"留幾分底牌，點到即止", cn:"機緣", result:"你三分真七分虛地應付過去，對方看出了你的謹慎，倒也不惱，只說「來日再會」。", effects:{ji:2}},
+          {label:"當場切磋見真章", cn:"根骨", result:"一番硬碰硬的較量下來，你雖敗猶榮，那位天驕的名字，你此後總會多留意幾分。", effects:{gu:2,health:-5,jianghu:4}}
+        ]},
+      { title:"世家的聯姻邀約",
+        text:"一戶頗有勢力的世家看中你的資質，暗示若你願與其子女結為道侶，家族資源可任你調用。",
+        choices:[
+          {label:"為前程計，應下這門親事", cn:"廟堂", result:"你權衡再三，應了下來。往後修行路上確實順遂許多，只是每逢夜深，總覺得心裡空了一塊。", effects:{miao:14,daoyuan:12,chixin:-8}},
+          {label:"坦言婉拒，情義不能將就", cn:"赤心", result:"你誠懇地回絕了，說姻緣不該是交易。那世家雖略感失望，倒也高看你這份坦蕩。", effects:{chixin:10,ren:1}},
+          {label:"以修行未穩為由拖延", cn:"人脈", result:"你不把話說死，只說時機未到，兩邊都留了餘地，倒也算是圓滑的處世之道。", effects:{ren:1,ji:1}}
+        ]},
+      { title:"白骨道的試探",
+        text:"一名行蹤詭秘之人在你耳邊低語，說白骨道教義「死亡是唯一的公平」自有其道理，邀你聽一場秘密的講經。",
+        choices:[
+          {label:"斷然拒絕，並示警旁人", cn:"赤心", result:"你把這人趕了出去，還提醒了同門提防邪道滲透。那人臨走前只留下一句冷笑。", effects:{chixin:8,xie:-8,jianghu:4}},
+          {label:"出於好奇，暗中旁聽一次", cn:"機緣", result:"你按捺不住好奇心去聽了一場，那套說辭比你想像中更有蠱惑力，你心底掠過一絲寒意，卻也因此多知曉了一些邪道底細。", effects:{ji:2,xie:6,chixin:-4}},
+          {label:"假意應承，伺機查探底細", cn:"悟性", result:"你虛與委蛇地應了下來，暗中記下對方的行蹤與聯絡方式，這份底細，日後或許能派上用場。", effects:{wu:2,xie:4}}
+        ]}
+    ],
+    breakthrough:{name:"周天：三重道旋合流", text:"三重小周天循環無誤，方能合成真正的大周天——這一關考驗的不只是氣血根骨，更是心念是否純粹統一。", attr:"wu"}
+  },
+  {
+    key:"tongtian", rank:"七品", name:"通天境",
+    intro:"人身四海之首「脊柱海」徹底甦醒，鑿穿「天地門」這道蒙昧屏障。你已算得上一方修士，列國與宗門的目光開始真正落到你身上。",
+    events:[
+      { title:"秘境的機緣",
+        text:"你聽聞一處小型秘境近日開啟，傳言其中藏有前人遺留的道術殘篇，只是入口地形凶險，已有修士折損其中。",
+        choices:[
+          {label:"隻身闖入，搏一份機緣", cn:"機緣", result:"你在秘境中九死一生，總算摸到殘篇的一角，雖不完整，卻也讓你對道術的理解更進一層。", effects:{ji:2,wu:1,health:-14,daoyuan:15}},
+          {label:"邀同道結伴同行，分潤所得", cn:"人脈", result:"你與幾名同道相約而行，彼此照應之下有驚無險，雖所得需均分，卻也結下了過命的交情。", effects:{ren:2,daoyuan:8}},
+          {label:"權衡風險，放棄此行", cn:"根骨", result:"你估量自身火候未到，終究沒有冒險。事後聽聞折損的修士名單，你慶幸自己留了分寸。", effects:{gu:1,chixin:2}}
+        ]},
+      { title:"邊疆的征召",
+        text:"北境傳來邊防吃緊的消息，一紙征召文書送到你手中，邀你隨軍歷練——這既是苦差，也是履歷。",
+        choices:[
+          {label:"應召從軍，親赴邊疆", cn:"根骨", result:"邊疆的風雪磨礪了你的筋骨與心性，你在幾場遭遇戰裡活了下來，也第一次真切感受到「守土」二字的分量。", effects:{gu:2,health:-10,jianghu:8}},
+          {label:"以修行要務婉拒", cn:"機緣", result:"你託辭潛修緊要推掉了征召，把時間留給了自己的修行，只是這份缺席，日後或許會被人記起。", effects:{ji:1,daoyuan:8}},
+          {label:"改以資材代役", cn:"廟堂", result:"你捐輸了一筆道元石代替親身應役，官府記你一份名頭，邊疆的將士則多了幾分裝備，各得其所。", effects:{miao:10,daoyuan:-12}}
+        ]},
+      { title:"太虛閣甄選",
+        text:"太虛閣派人下來甄選新一批巡察使人選，考核不僅看修為，更看你面對取捨時的分寸。",
+        choices:[
+          {label:"全力以赴，爭取入閣", cn:"悟性", result:"你在考核中全力施展，雖有幾分刻意，卻也讓考官看出了你的決心，入閣的門檻似乎近了一些。", effects:{wu:2,daotong:10}},
+          {label:"平常心應對，順其自然", cn:"赤心", result:"你不刻意迎合考官的喜好，只按本心行事。考官反倒因你這份坦然，在名冊上多寫了幾筆。", effects:{chixin:6,daotong:6}},
+          {label:"藉機結交同場競爭的對手", cn:"人脈", result:"你沒把同場的人當純粹的對手，反倒交下了幾分情誼，雖未必最出眾，卻贏得了人心。", effects:{ren:2,daotong:4}}
+        ]},
+      { title:"放下恩怨",
+        text:"你幼時結下的一樁家族恩怨，如今對方主動找上門來，語氣中帶著試探，不知是求和還是尋釁。",
+        choices:[
+          {label:"既往不咎，坦然一笑泯恩仇", cn:"赤心", result:"你選擇放下，對方顯是沒料到，一時愣住，隨後鄭重道謝。這份釋然，讓你走得更輕快了。", effects:{chixin:10,ren:1}},
+          {label:"言明底線，卻不趕盡殺絕", cn:"人脈", result:"你把話說清楚，既不糾纏舊怨，也不容對方越界，彼此算是體面地翻篇。", effects:{ren:2,chixin:2}},
+          {label:"藉機討回公道", cn:"江湖", result:"你趁勢討回了當年的公道，江湖上多了幾分你「有仇必報」的名聲，只是心裡那口氣，未必真的順了。", effects:{jianghu:10,chixin:-4}}
+        ]}
+    ],
+    breakthrough:{name:"通天：鑿穿天地門", text:"天地門是蒙昧屏障，唯有徹底鑿穿，肉身方能真正踏入通天之境——這一步九死一生,也是脫胎換骨的分水嶺。", attr:"gu"}
+  },
+  {
+    key:"tenglong", rank:"六品", name:"騰龍境",
+    intro:"突破天地門後肉身可飛，五府海蒙昧之霧初清，「天地孤島」仍鎮壓其上等你破開。你的名字，開始出現在列國的暗中記檔裡。",
+    events:[
+      { title:"黃河之會",
+        text:"一年一度的黃河之會將近，這是列國天驕同場競技、揚名天下的盛事，你也接到了參賽的請柬。",
+        choices:[
+          {label:"傾力備戰，志在奪魁", cn:"根骨", result:"你閉關苦修數月，賽場上拼盡全力，雖未能奪魁，也殺入了前列，一戰揚名。", effects:{gu:2,health:-8,jianghu:10,miao:6}},
+          {label:"以觀摩學習為主，穩紮穩打", cn:"悟性", result:"你抱著見賢思齊的心態出賽，雖名次平平，卻從高手過招中悟出不少門道。", effects:{wu:2,daoyuan:10}},
+          {label:"婉拒赴會，潛心閉關", cn:"機緣", result:"你選擇不去湊這場熱鬧，把時間都用在了自己的道途上，錯過了揚名的機會，卻也躲開了場中的明爭暗鬥。", effects:{ji:1,daoyuan:10}}
+        ]},
+      { title:"剿滅邪道分壇",
+        text:"太虛閣接到密報，某處發現無生教的秘密分壇，正在物色人手前往清剿。",
+        choices:[
+          {label:"主動請纓，親赴清剿", cn:"赤心", result:"你請命隨隊出征，一番惡戰下來剷除了那處分壇，救下了幾名被蠱惑的信眾。", effects:{chixin:10,xie:-12,health:-10,daotong:10}},
+          {label:"提供情報，不親身涉險", cn:"悟性", result:"你把此前查探到的線索交了上去，行動由旁人主導，雖少了幾分風頭，卻也穩妥。", effects:{wu:1,daotong:6}},
+          {label:"事不關己，專注自身修行", cn:"機緣", result:"你婉拒了這趟差事，把時間留給自己。分壇最終仍被剿滅，只是你的名字沒有出現在功勞簿上。", effects:{ji:1,daoyuan:8}}
+        ]},
+      { title:"宗門繼承之爭",
+        text:"你相熟的一處宗門因掌門突然離世，兩位長老為繼承之位爭得不可開交，都來請你居中調停。",
+        choices:[
+          {label:"秉公評斷，指出真正合適之人", cn:"赤心", result:"你不徇私情，直言誰更適合掌門之位，雖得罪了落選的一方，卻讓宗門免於分裂。", effects:{chixin:8,miao:6}},
+          {label:"促成兩人分權共治", cn:"人脈", result:"你提出折衷方案，讓兩位長老分掌內外事務，暫時息事寧人，這份手腕讓不少人記在心裡。", effects:{ren:2,miao:6}},
+          {label:"婉拒介入，不趟這渾水", cn:"機緣", result:"你以「非我宗門中人，不宜置喙」為由推辭了，宗門後來自行了斷此事，你也因此少了些牽連。", effects:{ji:1}}
+        ]},
+      { title:"異獸越境",
+        text:"邊境傳來急報，一頭天妖級異獸越境闖入人族村落，附近修士傷亡不小，你恰好在附近。",
+        choices:[
+          {label:"挺身迎戰，護住村落", cn:"根骨", result:"你與異獸鏖戰半日，雖渾身是傷，總算逼退了它，村落裡的百姓對你千恩萬謝。", effects:{gu:2,health:-16,jianghu:12,chixin:6}},
+          {label:"設法引開異獸，爭取撤離時間", cn:"悟性", result:"你以巧計將異獸引往荒僻處，爭取到村民撤離的時間，雖未能將其擊殺，卻也保全了大半人命。", effects:{wu:2,health:-6,jianghu:6}},
+          {label:"上報太虛閣，等候正規支援", cn:"機緣", result:"你權衡自身實力不足以正面對抗，選擇火速上報求援，雖有些村落遭了殃，支援終究趕到，控制住了損失。", effects:{ji:1,chixin:-4}}
+        ]}
+    ],
+    breakthrough:{name:"騰龍：破天地孤島", text:"天地孤島鎮壓於五府海之上，唯有以己身之力破開，方能真正肉身騰空、名副其實地踏入騰龍之境。", attr:"gu"}
+  },
+  {
+    key:"neifu", rank:"五品", name:"內府境",
+    intro:"古稱神通境。開發五府中的內府與秘藏，神通種子或將於此境孕育。你離神通之路只剩一步，這一步，往往決定了你未來數百年的道途上限。",
+    events:[
+      { title:"神通的雛形",
+        text:"閉關中，你隱隱感應到一縷神通種子的萌動，它似乎正在回應你這些年來真正在意、也真正堅持的東西。",
+        choices:[
+          {label:"順從赤誠本心去引導它", cn:"赤心", result:"你不刻意雕琢，只是誠實面對自己一路走來最看重的東西，神通的雛形似乎因此更加純粹、堅定。", effects:{chixin:10,wu:2,daotong:8}},
+          {label:"以最有效率的路數強行催發", cn:"悟性", result:"你選擇了最快的路數催發神通，種子確實提早成形，只是隱隱覺得，這份力量裡少了點什麼。", effects:{wu:2,daoyuan:15,chixin:-4}},
+          {label:"暫緩引導，先穩固根基", cn:"根骨", result:"你按捺住急切，先把根基徹底夯實，神通種子雖萌動得慢，底子卻紮實得多。", effects:{gu:2,health:6}}
+        ]},
+      { title:"六雄博弈",
+        text:"你被牽連進一場六雄之間的外交風波——一方想拉攏你為己所用，另一方則暗中施壓要你保持中立。",
+        choices:[
+          {label:"明確表態,選邊而立", cn:"廟堂", result:"你權衡利弊後選定了一方，換來了實實在在的資源與地位，但也徹底站到了另一方的對立面。", effects:{miao:15,daoyuan:15,jianghu:-6}},
+          {label:"堅持中立,兩不相幫", cn:"道統", result:"你婉拒了雙方的拉攏，只求問心無愧地走自己的路。雙方雖都有些不快，卻也因此高看你幾分風骨。", effects:{daotong:12,chixin:6}},
+          {label:"暗中斡旋,促成緩和", cn:"人脈", result:"你穿針引線，讓兩方的緊張稍稍緩和，雖未必徹底化解，這份手腕卻讓你在列國博弈中多了一分籌碼。", effects:{ren:2,miao:6,jianghu:6}}
+        ]},
+      { title:"內府秘藏",
+        text:"你的內府中隱約有一處秘藏尚未開啟，傳言貿然開啟風險極大，但收穫也可能是本命神通的關鍵一環。",
+        choices:[
+          {label:"冒險強行開啟", cn:"機緣", result:"你咬牙冒險一搏，秘藏開啟時反噬不小，你也因此差點失了心神，好在最終挺了過來，收穫遠超預期。", effects:{ji:2,daoyuan:20,health:-18},},
+          {label:"謹慎地緩緩試探", cn:"悟性", result:"你按部就班、步步為營地試探，雖耗時良久，總算安穩地開啟了秘藏一角。", effects:{wu:2,daoyuan:10,health:-4}},
+          {label:"暫且封存，來日再議", cn:"根骨", result:"你選擇先把秘藏封存，穩住根基要緊，這份謹慎讓你錯失了機緣，卻也避開了未知的風險。", effects:{gu:1,chixin:2}}
+        ]},
+      { title:"寒門弟子",
+        text:"一名資質平平的寒門弟子慕名求見，希望你能指點一二，他的處境讓你想起了自己當年。",
+        choices:[
+          {label:"傾力指點，甚至贈他資材", cn:"赤心", result:"你毫無保留地指點了他，還贈了些許資材。他日後未必大富大貴，但這份恩情，他記了一輩子。", effects:{chixin:12,daoyuan:-10,jianghu:8}},
+          {label:"點到為止，讓他自己領悟", cn:"悟性", result:"你只稍加點撥，把悟道的路留給他自己走。這份分寸，恰是你認為真正對他好的方式。", effects:{wu:1,chixin:4}},
+          {label:"以修行繁忙為由婉拒", cn:"機緣", result:"你婉拒了他的求見，專心自己的修行。他失望地離開，你心裡掠過一絲說不清的滋味。", effects:{ji:1,chixin:-8}}
+        ]}
+    ],
+    breakthrough:{name:"內府：神通種子萌發", text:"五品秘藏若能徹底開發，神通種子便有機會真正成熟——這決定了你未來神通的雛形與走向。", attr:"wu"}
+  },
+  {
+    key:"wailou", rank:"四品", name:"外樓境",
+    intro:"構築星穹聖樓，錨定星域、接引星光，凝成專屬於你的「道途」。你已是列國矚目的天驕人物，你選擇成為誰，將真正定義你此後的一生。",
+    events:[
+      { title:"道途的錨定",
+        text:"星穹聖樓即將落成，你需要在此時明確自己此後道途的核心取向——是入朝理政、行走江湖，還是潛心求道。",
+        choices:[
+          {label:"以廟堂經世為己任", cn:"廟堂", result:"你選定了經世濟民的道途，星穹聖樓的星光似乎也因此凝聚得格外沉穩厚重。", effects:{miao:18,daoyuan:12}},
+          {label:"以江湖俠義為己任", cn:"江湖", result:"你選定了行走四方、快意恩仇的道途，星光中隱隱透出一股鋒芒畢露的氣象。", effects:{jianghu:18,daoyuan:12}},
+          {label:"以問道求真為己任", cn:"道統", result:"你選定了潛心問道的道途，星光沉靜內斂，彷彿與你的心境相互印證。", effects:{daotong:18,daoyuan:12}}
+        ]},
+      { title:"邊荒的前哨",
+        text:"邊荒魔潮再度活躍的傳聞甚囂塵上，太虛閣召集外樓境以上的修士組成前哨隊伍，先行探查。",
+        choices:[
+          {label:"主動請纓，親赴前哨", cn:"根骨", result:"你隨隊深入邊荒，親眼見識了魔族的兇殘，也在數場惡戰中真正把自己的修為砥礪到了實處。", effects:{gu:2,health:-14,jianghu:10,daotong:6}},
+          {label:"負責後方統籌與情報彙整", cn:"悟性", result:"你留在後方統籌調度，把前線傳回的情報梳理得井井有條，這份運籌之功雖不顯眼，卻同樣要緊。", effects:{wu:2,miao:8}},
+          {label:"以資歷尚淺為由推辭", cn:"機緣", result:"你自認火候未足，婉拒了此行，把機會讓給了更有把握的人，也算是一種清醒的自知。", effects:{ji:1,chixin:-2}}
+        ]},
+      { title:"太虛閣的召見",
+        text:"太虛閣高層親自召見你，言談間既有考較，也似有意授你以要職——這是一份沉甸甸的信任，也是一份枷鎖。",
+        choices:[
+          {label:"欣然受命，肩負要職", cn:"道統", result:"你應下了這份重任，太虛閣的資源與人脈自此向你敞開，只是往後行事，再難只顧自己的喜惡。", effects:{daotong:16,daoyuan:15,ren:1}},
+          {label:"坦言尚需歷練，暫不受命", cn:"赤心", result:"你誠實地說出自己尚未準備好，高層聞言不怒反笑，說這份自知之明，比盲目受命更難得。", effects:{chixin:10,daotong:6}},
+          {label:"婉拒要職，但願效犬馬之勞", cn:"人脈", result:"你婉拒了正式的職位，卻表明願以自由之身相助，這份靈活的姿態，讓你既保有自主，也不失情分。", effects:{ren:2,daotong:4}}
+        ]},
+      { title:"至交的抉擇",
+        text:"你多年的至交捲入一樁牽連甚廣的案子，證據對他極為不利，而你恰好握有能替他脫罪、卻也可能徇私枉法的關鍵訊息。",
+        choices:[
+          {label:"依理秉公，不徇私情", cn:"廟堂", result:"你選擇了公道，至交因此獲罪，你們的情誼自此蒙上陰影，但你問心無愧——這正是你一路堅持「把別人也當人看」的份量。", effects:{chixin:8,miao:10,jianghu:-8}},
+          {label:"念及情義，暗中相助", cn:"江湖", result:"你動用了那份訊息替至交開脫，他此後對你感激涕零，只是你心裡清楚，這份公道已經打了折扣。", effects:{jianghu:10,chixin:-6,ren:2}},
+          {label:"勸他自首，願陪他一同承擔", cn:"赤心", result:"你沒有替他掩蓋，也沒有落井下石，而是陪著他一同去面對——這份不逃避的擔當，讓你們的情誼反而更深了一層。", effects:{chixin:14,ren:2,miao:4}}
+        ]}
+    ],
+    breakthrough:{name:"外樓：構築星穹聖樓", text:"星穹聖樓一旦落成，道途便就此凝定——這是你告別「外樓境」、真正叩問神臨大關的最後一步。", attr:"all"}
+  }
+];
+
+const FINALE = {
+  rank:"三品", name:"神臨境",
+  intro:"金軀玉髓，身魂得天地認可，不再受氣血衰朽所限——神臨突破時將外放「域」與「靈識」，是凡塵修士畢生所求的至高一關。列國、宗門、太虛閣，乃至你此生所有的抉擇，都將在這一刻匯聚成潮，托著你，或吞沒你。",
+  text:"你盤坐於星穹聖樓之巔，運轉周身道脈。你想起楓林鎮的藥鋪、想起那些接受過你恩惠或被你辜負的人、想起你在廟堂江湖道統之間走出的這條路——此刻再無旁人可以代你走完最後一步。"
+};
+
+/* ===================== 結局模板 ===================== */
+function buildEnding(state){
+  if(state.health<=0){
+    return {
+      sub:"早夭 · 道消身殞",
+      title:"星光未及長明",
+      body:"你倒在了證道路上，未能等到神臨那一刻。你的名字很快被新的天驕蓋過，只有極少數受過你恩惠的人，還記得你曾經是怎樣的人。\n\n「星星死去了，星光還在長夜裡。」你這一生雖短，卻也曾真實地照亮過幾個人的長夜——這，或許已是不悔。"
+    };
+  }
+
+  const fameKeys = [["miao","廟堂"],["jianghu","江湖"],["daotong","道統"],["xie","邪道"]];
+  fameKeys.sort((a,b)=>state[b[0]]-state[a[0]]);
+  const dom = fameKeys[0][0];
+  const domVal = fameKeys[0][1];
+  const highChixin = state.chixin>=70, lowChixin = state.chixin<=30;
+  const success = state.finaleSuccess;
+
+  if(dom==="xie" && state.xie>=25){
+    return {
+      sub: success ? "神臨 · 墮入魔道" : "止步 · 墮入魔道",
+      title: success ? "梟雄成道，卻已非昔日之你" : "在深淵邊緣，你選擇了留下",
+      body:`一次次在赤心與利害之間，你更多選擇了後者。邪道的暗流終究纏上了你，${success?"你以此証得神臨之境，成為列國忌憚的一方梟雄，威能赫赫，卻再無人真心與你交心。":"你雖未能突破神臨，卻也已與白骨道、無生教的暗流糾纏太深，往後餘生，怕是要活在提防與被提防之中。"}\n\n你偶爾午夜夢回，會想起楓林鎮那個尚未被世道磨去稜角的自己——只是想歸想，你已經回不去了。`
+    };
+  }
+
+  if(dom==="daotong" && highChixin && success){
+    return {
+      sub:"神臨 · 太虛真人",
+      title:"赤心未改，終抵神臨",
+      body:"你以近乎純粹的赤誠走完了這條路——不是不知世道艱難，而是明知艱難，仍選擇把自己當人看，也把別人當人看。星穹聖樓之巔，域與靈識外放的那一刻，你聽見遠處太虛閣的鐘聲彷彿為你而鳴。\n\n此後你以太虛閣真人的身份繼續巡守人間，聽聞列國之中，也有幾位年輕的天驕在江湖傳言裡提起過你的名字——其中一人，據說本名喚作姜望。你們未曾深交，卻在各自的赤心路上，遙遙印證著同一件事：這亂世裡，總有人選擇不把良知活丟。"
+    };
+  }
+
+  if(dom==="miao"){
+    if(highChixin){
+      return {sub: success?"神臨 · 肱股名臣":"止步 · 清正官身", title: success?"廟堂之上，猶存赤心":"雖止步外樓，官聲清正",
+        body:`你選了一條在權力中心行走、卻始終不肯讓良知蒙塵的路。${success?"你終於證得神臨，成為列國敬重的肱股之臣，青史或許會記你一筆「仁政」。":"你雖未能突破神臨，止步於外樓境，卻也在廟堂之上留下了清正之名。"}\n\n你始終記得，「以權勢促公益則興，以權勢謀私利則亡」——這句話，你一生都當真了。`};
+    }
+    return {sub: success?"神臨 · 權謀深沉":"止步 · 宦海浮沉", title: success?"位極人臣，心已蒼老":"宦海沉浮，未至巔峰",
+      body:`你在廟堂的博弈裡越走越深，${success?"最終證得神臨，權柄煊赫一時，只是身邊真心之人，早已所剩無幾。":"雖未能觸及神臨之境，卻也在權術傾軋中活成了一方角色。"}\n\n有時夜深人靜，你也會想，如果當年多一點赤誠、少一點算計，如今的自己會是什麼模樣。`};
+  }
+
+  if(dom==="jianghu"){
+    if(highChixin){
+      return {sub: success?"神臨 · 一代宗師":"止步 · 俠名遠揚", title: success?"快意恩仇，赤心不悔":"雖未神臨，俠骨錚錚",
+        body:`你行走四方，路見不平、拔劍相助，${success?"終於在江湖傳頌與自身砥礪中證得神臨，成為後輩口中「一代宗師」的傳說。":"雖未能踏入神臨之境，「赤心遊俠」的名號卻已響徹列國江湖。"}\n\n你這一生，未必顯赫於廟堂，卻活得堂堂正正、無愧於心。`};
+    }
+    return {sub: success?"神臨 · 孤高強者":"止步 · 快意恩仇", title:"恩怨分明，眾人敬畏三分",
+      body:`你快意恩仇、賞罰隨心，${success?"憑一身狠辣手段證得神臨，威名赫赫，卻也讓不少人敬而遠之。":"雖未達神臨之境，江湖上提起你，多是敬畏多過親近。"}\n\n你曾經也想過，是不是該對這世道更軟一些——但轉念一想，若人人都欺你軟弱，軟弱又有什麼用。`};
+  }
+
+  // dom === daotong 但赤心不高，或其餘情況
+  if(success){
+    return {sub:"神臨 · 問道有成", title:"道成，心境已非當年",
+      body:"你潛心問道，終於在星穹聖樓之巔證得神臨之境，域與靈識外放，天地為之側目。這一路你走得孤獨，卻也算求仁得仁——道途從來由你自己選擇，旁人的評說，於你已不甚重要。"};
+  }
+  return {sub:"止步 · 外樓終老", title:"未至神臨，此心無悔",
+    body:"星穹聖樓之巔的最後一步，你終究未能踏過。你止步於外樓境，此後或歸隱鄉里、或繼續在自己選定的道途上緩緩前行。\n\n「此境巔峰，也不過滿足破境條件」——境界從不是修行的全部。你這一生做過的抉擇，比你止步於哪一品，更能說明你是誰。"};
+}
+
+/* ===================== 遊戲狀態 State ===================== */
+let state = null;
+let create = {origin:null, path:null, alloc:{gu:0,wu:0,ji:0,ren:0}, poolLeft:8};
+let flow = {stageIdx:-1, phase:"stage-intro", eventOrder:[], eventPos:0, pendingEffects:null};
+
+function newState(){
+  return {
+    gu:4, wu:4, ji:4, ren:4,
+    daoyuan:0, chixin:50, health:100,
+    miao:0, jianghu:0, daotong:0, xie:0,
+    journal:[], finaleSuccess:false
+  };
+}
+
+/* ===================== 畫面切換 ===================== */
+function showScreen(id){
+  ["screen-title","screen-create","screen-game","screen-end"].forEach(s=>{
+    document.getElementById(s).classList.toggle("hide", s!==id);
+  });
+}
+
+/* ===================== 建角流程 ===================== */
+function renderOriginGrid(){
+  const grid = document.getElementById("origin-grid");
+  grid.innerHTML = "";
+  ORIGINS.forEach(o=>{
+    const card = document.createElement("button");
+    card.className = "pick-card";
+    card.type = "button";
+    card.innerHTML = `<span class="name">${o.name}</span><span class="place">${o.place}</span>
+      <span class="desc">${o.desc}</span>
+      <span class="tags">${o.tags.map(t=>`<span class="tag">${t}</span>`).join("")}</span>`;
+    card.addEventListener("click", ()=>{
+      create.origin = o;
+      [...grid.children].forEach(c=>c.classList.remove("selected"));
+      card.classList.add("selected");
+      document.getElementById("btn-step0-next").disabled = false;
+    });
+    grid.appendChild(card);
+  });
+}
+function renderPathGrid(){
+  const grid = document.getElementById("path-grid");
+  grid.innerHTML = "";
+  PATHS.forEach(p=>{
+    const card = document.createElement("button");
+    card.className = "pick-card";
+    card.type = "button";
+    card.innerHTML = `<span class="name">${p.name}</span><span class="desc">${p.desc}</span>`;
+    card.addEventListener("click", ()=>{
+      create.path = p;
+      [...grid.children].forEach(c=>c.classList.remove("selected"));
+      card.classList.add("selected");
+      document.getElementById("btn-step1-next").disabled = false;
+    });
+    grid.appendChild(card);
+  });
+}
+function renderAllocator(){
+  const box = document.getElementById("allocator");
+  box.innerHTML = "";
+  Object.keys(ATTR_LABEL).forEach(key=>{
+    const row = document.createElement("div");
+    row.className = "attr-row";
+    row.innerHTML = `<span class="lbl">${ATTR_LABEL[key]}</span>
+      <div class="bar-track"><div class="bar-fill" id="bar-${key}" style="width:0%"></div></div>
+      <span class="val" id="val-${key}">4</span>
+      <div class="stepper">
+        <button type="button" data-op="-" data-key="${key}">−</button>
+        <button type="button" data-op="+" data-key="${key}">+</button>
+      </div>`;
+    box.appendChild(row);
+  });
+  box.addEventListener("click", (e)=>{
+    const btn = e.target.closest("button[data-key]");
+    if(!btn) return;
+    const key = btn.dataset.key;
+    if(btn.dataset.op==="+" && create.poolLeft>0 && create.alloc[key]<5){
+      create.alloc[key]++; create.poolLeft--;
+    } else if(btn.dataset.op==="-" && create.alloc[key]>0){
+      create.alloc[key]--; create.poolLeft++;
+    }
+    updateAllocatorView();
+  });
+  updateAllocatorView();
+}
+function updateAllocatorView(){
+  Object.keys(ATTR_LABEL).forEach(key=>{
+    const total = 4 + create.alloc[key];
+    document.getElementById(`val-${key}`).textContent = total;
+    document.getElementById(`bar-${key}`).style.width = Math.min(100, total*9) + "%";
+  });
+  document.getElementById("pool-left").textContent = create.poolLeft;
+}
+
+function goStep(n){
+  document.querySelectorAll(".create-step").forEach(s=>s.classList.toggle("active", +s.dataset.step===n));
+}
+
+/* ===================== 遊戲主流程 ===================== */
+function pickN(arr, n){
+  const copy = [...arr.keys()];
+  for(let i=copy.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [copy[i],copy[j]]=[copy[j],copy[i]]; }
+  return copy.slice(0,n);
+}
+
+function startGame(){
+  state = newState();
+  const o = create.origin, p = create.path;
+  Object.keys(create.alloc).forEach(k=> state[k]+=create.alloc[k]);
+  if(o.attr) Object.entries(o.attr).forEach(([k,v])=> state[k]+=v);
+  if(p.attr) Object.entries(p.attr).forEach(([k,v])=> state[k]+=v);
+  if(o.fame) Object.entries(o.fame).forEach(([k,v])=> state[k]+=v);
+  if(p.fame) Object.entries(p.fame).forEach(([k,v])=> state[k]+=v);
+  if(o.chixin) state.chixin += o.chixin;
+  state.originId = o.id; state.originName = o.name;
+  state.pathId = p.id; state.pathName = p.name;
+
+  flow = {stageIdx:0, phase:"stage-intro", eventOrder:pickN(STAGES[0].events,2), eventPos:0};
+  showScreen("screen-game");
+  renderSidebar();
+  renderStageIntro();
+}
+
+function clampAll(){
+  ["gu","wu","ji","ren"].forEach(k=> state[k]=Math.max(1,state[k]));
+  state.daoyuan = Math.max(0, state.daoyuan);
+  state.chixin = Math.max(0, Math.min(100, state.chixin));
+  state.health = Math.max(0, Math.min(100, state.health));
+  ["miao","jianghu","daotong","xie"].forEach(k=> state[k]=Math.max(0, Math.min(100, state[k])));
+}
+
+function renderSidebar(){
+  document.getElementById("side-id").textContent = `${state.originName} · ${state.pathName}`;
+  document.getElementById("v-health").textContent = state.health;
+  document.getElementById("f-health").style.width = state.health+"%";
+  document.getElementById("v-chixin").textContent = state.chixin;
+  document.getElementById("f-chixin").style.width = state.chixin+"%";
+  document.getElementById("v-daoyuan").textContent = state.daoyuan;
+  document.getElementById("v-miao").textContent = state.miao;
+  document.getElementById("f-miao").style.width = state.miao+"%";
+  document.getElementById("v-jh").textContent = state.jianghu;
+  document.getElementById("f-jh").style.width = state.jianghu+"%";
+  document.getElementById("v-dt").textContent = state.daotong;
+  document.getElementById("f-dt").style.width = state.daotong+"%";
+  document.getElementById("v-xie").textContent = state.xie;
+  document.getElementById("f-xie").style.width = state.xie+"%";
+
+  const ag = document.getElementById("attr-grid");
+  ag.innerHTML = Object.keys(ATTR_LABEL).map(k=>`<div><span>${ATTR_LABEL[k]}</span><b>${state[k]}</b></div>`).join("");
+
+  const dotsWrap = document.getElementById("stage-track");
+  dotsWrap.innerHTML = "";
+  STAGES.forEach((s,i)=>{
+    const d = document.createElement("span");
+    d.className = "stage-dot" + (i<flow.stageIdx?" done":"") + (i===flow.stageIdx?" now":"");
+    d.title = s.name;
+    dotsWrap.appendChild(d);
+  });
+  const fd = document.createElement("span");
+  fd.className = "stage-dot" + (flow.stageIdx>=STAGES.length?" now":"");
+  fd.title = FINALE.name;
+  dotsWrap.appendChild(fd);
+
+  const jl = document.getElementById("journal-list");
+  jl.innerHTML = state.journal.map(j=>`<li><b>${j.stage}</b> · ${j.title}：${j.choice}</li>`).join("");
+}
+
+function renderStageIntro(){
+  const stage = STAGES[flow.stageIdx];
+  document.getElementById("story-stage").textContent = `${stage.rank} ${stage.name}`;
+  document.getElementById("story-index").textContent = "境界綜述";
+  document.getElementById("story-title").textContent = stage.name;
+  document.getElementById("story-text").innerHTML = `<p>${stage.intro}</p>`;
+  document.getElementById("story-choices").innerHTML = "";
+  const btn = document.createElement("button");
+  btn.className = "choice-btn"; btn.style.maxWidth="220px";
+  btn.textContent = "踏入此境 →";
+  btn.addEventListener("click", ()=>{ flow.phase="event"; renderEvent(); });
+  document.getElementById("story-choices").appendChild(btn);
+  document.getElementById("result-box").classList.add("hide");
+}
+
+function renderEvent(){
+  const stage = STAGES[flow.stageIdx];
+  const ev = stage.events[flow.eventOrder[flow.eventPos]];
+  document.getElementById("story-stage").textContent = `${stage.rank} ${stage.name}`;
+  document.getElementById("story-index").textContent = `境遇 ${flow.eventPos+1} / ${flow.eventOrder.length}`;
+  document.getElementById("story-title").textContent = ev.title;
+  document.getElementById("story-text").innerHTML = `<p>${ev.text}</p>`;
+  const wrap = document.getElementById("story-choices");
+  wrap.innerHTML = "";
+  ev.choices.forEach(c=>{
+    const b = document.createElement("button");
+    b.className = "choice-btn";
+    b.innerHTML = `<span class="cn">〔${c.cn}〕</span>${c.label}`;
+    b.addEventListener("click", ()=> resolveChoice(ev, c, stage.name));
+    wrap.appendChild(b);
+  });
+  document.getElementById("result-box").classList.add("hide");
+}
+
+function applyEffects(effects){
+  Object.entries(effects).forEach(([k,v])=>{ if(k in state) state[k]+=v; });
+  clampAll();
+}
+
+function effectChips(effects){
+  const labelMap = {gu:"根骨",wu:"悟性",ji:"機緣",ren:"人脈",daoyuan:"道元",chixin:"赤心",health:"元氣",miao:"廟堂",jianghu:"江湖",daotong:"道統",xie:"邪道"};
+  return Object.entries(effects).map(([k,v])=>{
+    const cls = v>=0 ? "pos":"neg";
+    const sign = v>=0 ? "+":"";
+    return `<span class="chip ${cls}">${labelMap[k]||k} ${sign}${v}</span>`;
+  }).join("");
+}
+
+function resolveChoice(ev, choice, stageName){
+  applyEffects(choice.effects);
+  state.journal.push({stage:stageName, title:ev.title, choice:choice.label.replace(/^./,"") + "" });
+  state.journal[state.journal.length-1].choice = choice.label;
+  renderSidebar();
+
+  document.getElementById("story-choices").innerHTML = "";
+  const box = document.getElementById("result-box");
+  box.classList.remove("hide");
+  document.getElementById("result-text").textContent = choice.result;
+  document.getElementById("result-chips").innerHTML = effectChips(choice.effects);
+  document.getElementById("btn-continue").onclick = ()=>{
+    if(state.health<=0){ finishGame(); return; }
+    flow.eventPos++;
+    if(flow.eventPos < flow.eventOrder.length){
+      renderEvent();
+    } else {
+      renderBreakthrough();
+    }
+  };
+}
+
+function breakthroughChance(attrKey){
+  let base = 42;
+  if(attrKey==="all"){
+    const avg = (state.gu+state.wu+state.ji+state.ren)/4;
+    base += (avg-6)*5;
+  } else {
+    base += (state[attrKey]-6)*6;
+  }
+  base += Math.min(20, state.daoyuan*0.4);
+  base += state.ji*1.2;
+  base -= state.health<40 ? 10 : 0;
+  return Math.max(10, Math.min(92, Math.round(base)));
+}
+
+function renderBreakthrough(){
+  const stage = STAGES[flow.stageIdx];
+  const bt = stage.breakthrough;
+  const chance = breakthroughChance(bt.attr);
+  document.getElementById("story-stage").textContent = `${stage.rank} ${stage.name}`;
+  document.getElementById("story-index").textContent = "破境時刻";
+  document.getElementById("story-title").textContent = bt.name;
+  document.getElementById("story-card").classList.add("trial-card");
+  document.getElementById("story-text").innerHTML = `<p>${bt.text}</p><p class="trial-chance">依你如今根基，此番約有 ${chance}% 火候可成。</p>`;
+  document.getElementById("result-box").classList.add("hide");
+  const wrap = document.getElementById("story-choices");
+  wrap.innerHTML = "";
+  const b = document.createElement("button");
+  b.className = "choice-btn";
+  b.textContent = "運轉道脈，破境！";
+  b.addEventListener("click", ()=>{
+    const roll = Math.random()*100;
+    const success = roll < chance;
+    const box = document.getElementById("result-box");
+    wrap.innerHTML = "";
+    box.classList.remove("hide");
+    document.getElementById("story-card").classList.remove("trial-card");
+    let effects;
+    if(success){
+      effects = {daoyuan:-Math.round(state.daoyuan*0.5), health:-6, chixin:2};
+      document.getElementById("result-text").textContent = `一線道機貫通全身——你成功突破，正式踏入「${stage.rank} ${stage.name}」之境！`;
+      state.journal.push({stage:stage.name, title:"破境", choice:"成功突破，境界更進一階"});
+    } else {
+      effects = {health:-14, daoyuan:-Math.round(state.daoyuan*0.3)};
+      document.getElementById("result-text").textContent = `道機在你體內橫衝直撞，這一次未能功成——你受了不輕的反噬，但根基未損，尚可再圖後計。`;
+      state.journal.push({stage:stage.name, title:"破境", choice:"未能突破，帶傷前行"});
+    }
+    applyEffects(effects);
+    renderSidebar();
+    document.getElementById("result-chips").innerHTML = effectChips(effects);
+    document.getElementById("btn-continue").onclick = ()=>{
+      if(state.health<=0){ finishGame(); return; }
+      nextStage();
+    };
+  });
+  wrap.appendChild(b);
+}
+
+function nextStage(){
+  flow.stageIdx++;
+  if(flow.stageIdx < STAGES.length){
+    flow.phase = "stage-intro";
+    flow.eventOrder = pickN(STAGES[flow.stageIdx].events, 2);
+    flow.eventPos = 0;
+    renderStageIntro();
+  } else {
+    renderFinale();
+  }
+}
+
+function renderFinale(){
+  document.getElementById("story-stage").textContent = `${FINALE.rank} ${FINALE.name}`;
+  document.getElementById("story-index").textContent = "終極試煉";
+  document.getElementById("story-title").textContent = FINALE.name;
+  document.getElementById("story-card").classList.add("trial-card");
+  document.getElementById("story-text").innerHTML = `<p>${FINALE.intro}</p><p>${FINALE.text}</p>`;
+  const chance = Math.max(8, Math.min(90, Math.round(
+    30 + (state.gu+state.wu+state.ji+state.ren)*1.6 + Math.min(25,state.daoyuan*0.3)
+    + (state.miao+state.jianghu+state.daotong)*0.08 - (state.health<50?12:0)
+  )));
+  document.getElementById("story-text").innerHTML += `<p class="trial-chance">此生所有抉擇匯聚於此，你此番證得神臨的把握，約有 ${chance}%。</p>`;
+  const wrap = document.getElementById("story-choices");
+  wrap.innerHTML = "";
+  const b = document.createElement("button");
+  b.className = "choice-btn";
+  b.textContent = "直面此生所有抉擇，叩關神臨！";
+  b.addEventListener("click", ()=>{
+    state.finaleSuccess = Math.random()*100 < chance;
+    document.getElementById("story-card").classList.remove("trial-card");
+    finishGame();
+  });
+  wrap.appendChild(b);
+  document.getElementById("result-box").classList.add("hide");
+}
+
+function finishGame(){
+  const ending = buildEnding(state);
+  showScreen("screen-end");
+  document.getElementById("end-sub").textContent = ending.sub;
+  document.getElementById("end-title").textContent = ending.title;
+  document.getElementById("end-body").innerHTML = ending.body.split("\n\n").map(p=>`<p>${p}</p>`).join("");
+  document.getElementById("end-journal").innerHTML = state.journal.map(j=>`<li><b>${j.stage}</b> · ${j.title}：${j.choice}</li>`).join("");
+}
+
+/* ===================== 事件綁定 ===================== */
+document.getElementById("btn-start").addEventListener("click", ()=>{
+  renderOriginGrid(); renderPathGrid(); renderAllocator();
+  goStep(0);
+  showScreen("screen-create");
+});
+document.getElementById("btn-step0-next").addEventListener("click", ()=> goStep(1));
+document.getElementById("btn-step1-back").addEventListener("click", ()=> goStep(0));
+document.getElementById("btn-step1-next").addEventListener("click", ()=> goStep(2));
+document.getElementById("btn-step2-back").addEventListener("click", ()=> goStep(1));
+document.getElementById("btn-step2-next").addEventListener("click", startGame);
+document.getElementById("journal-toggle").addEventListener("click", (e)=>{
+  const list = document.getElementById("journal-list");
+  const willShow = list.classList.contains("hide");
+  list.classList.toggle("hide");
+  e.target.textContent = (willShow?"▾ 收合":"▸ 展開") + "赤心志（歷程記錄）";
+});
+document.getElementById("btn-restart").addEventListener("click", ()=>{
+  create = {origin:null, path:null, alloc:{gu:0,wu:0,ji:0,ren:0}, poolLeft:8};
+  document.getElementById("btn-step0-next").disabled = true;
+  document.getElementById("btn-step1-next").disabled = true;
+  showScreen("screen-title");
+});
+
+})();
+</script>
