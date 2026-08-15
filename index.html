@@ -252,6 +252,54 @@
   .legend-dot.cur{background:var(--vermillion);border-color:var(--vermillion);}
   .legend-dot.lock{border-style:dashed;border-color:var(--line);}
 
+  /* ---------- 人物 / 紙娃娃 ---------- */
+  .char-wrap{display:flex;gap:24px;flex-wrap:wrap;margin-top:8px;}
+  .doll-box{position:relative;width:180px;height:280px;flex:none;background:var(--paper);border:1px solid var(--line);border-radius:6px;}
+  .doll-svg{width:100%;height:100%;}
+  .doll-svg .doll-line{fill:none;stroke:var(--ink-soft);stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
+  .doll-svg .doll-fill{fill:var(--paper-deep);stroke:var(--ink-soft);stroke-width:1.5;}
+  .slot-btn{
+    position:absolute;transform:translate(-50%,-50%);
+    width:34px;height:34px;border-radius:50%;
+    background:var(--paper-raised);border:2px solid var(--line);
+    display:flex;align-items:center;justify-content:center;
+    font-family:var(--font-sans);font-size:10px;color:var(--muted);cursor:pointer;
+  }
+  .slot-btn.filled{color:var(--ink);}
+  .slot-btn:hover{border-color:var(--vermillion);}
+  .stat-readout{flex:1;min-width:200px;display:flex;flex-direction:column;gap:8px;font-family:var(--font-sans);}
+  .stat-row{display:flex;justify-content:space-between;font-size:13.5px;border-bottom:1px dashed var(--line);padding-bottom:6px;}
+  .stat-row b{font-variant-numeric:tabular-nums;}
+  .skill-list{display:flex;flex-direction:column;gap:8px;margin-top:10px;}
+  .skill-row{border:1px solid var(--line);border-radius:4px;padding:8px 12px;font-family:var(--font-sans);font-size:12.5px;color:var(--ink-soft);}
+  .skill-row b{color:var(--ink);font-family:var(--font-serif);font-size:14px;}
+  .item-pick-list{display:flex;flex-direction:column;gap:8px;margin-top:14px;}
+  .item-row{
+    display:flex;align-items:center;justify-content:space-between;gap:10px;
+    border:1px solid var(--line);border-radius:4px;padding:10px 14px;cursor:pointer;
+    font-family:var(--font-sans);font-size:13px;background:var(--paper);
+  }
+  .item-row:hover{border-color:var(--vermillion);}
+  .item-row .tier-tag{font-size:10.5px;padding:2px 8px;border-radius:20px;border:1px solid currentColor;}
+  .item-row .bonus{color:var(--muted);font-size:11.5px;}
+
+  /* ---------- 戰鬥 ---------- */
+  .combat-vs{display:flex;flex-direction:column;gap:14px;margin-bottom:6px;}
+  .combat-side{display:flex;flex-direction:column;gap:4px;}
+  .combat-name{display:flex;justify-content:space-between;font-family:var(--font-sans);font-size:13px;}
+  .combat-name .who{font-weight:700;}
+  .combat-hp-track{height:10px;border-radius:5px;background:var(--paper-deep);overflow:hidden;}
+  .combat-hp-fill{height:100%;border-radius:5px;background:var(--vermillion);transition:width .25s ease;}
+  .combat-hp-fill.enemy{background:var(--evil);}
+  .combat-log{
+    background:var(--paper);border:1px dashed var(--line);border-radius:4px;
+    padding:10px 14px;font-family:var(--font-sans);font-size:12.5px;color:var(--ink-soft);
+    max-height:120px;overflow-y:auto;display:flex;flex-direction:column;gap:4px;margin:10px 0;
+  }
+  .combat-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+  .combat-actions .choice-btn{margin:0;}
+  .skill-menu{display:flex;flex-direction:column;gap:8px;margin-top:8px;}
+
   /* ===================== 結局畫面 ===================== */
   #screen-end{display:flex;flex-direction:column;gap:22px;padding:20px 4px 40px;}
   .end-hero{text-align:center;display:flex;flex-direction:column;align-items:center;gap:10px;}
@@ -789,9 +837,80 @@ function newState(){
     gu:4, wu:4, ji:4, ren:4,
     daoyuan:0, chixin:50, health:100,
     miao:0, jianghu:0, daotong:0, xie:0,
-    journal:[], finaleSuccess:false, finalStageName:null
+    journal:[], finaleSuccess:false, finalStageName:null,
+    equipment:{weapon:null, armor:null, accessory:null},
+    inventory:[]
   };
 }
+
+/* ===================== 裝備 / 技能 / 敵人 ===================== */
+const TIER_COLOR = {"丁":"var(--muted)","丙":"var(--indigo-soft)","乙":"var(--gold)","甲":"var(--vermillion)"};
+
+const ITEMS = [
+  {id:"w1", slot:"weapon", tier:"丁", name:"青鋼劍", bonus:{atk:4}},
+  {id:"w2", slot:"weapon", tier:"丙", name:"寒鋩劍", bonus:{atk:8,crit:3}},
+  {id:"w3", slot:"weapon", tier:"乙", name:"赤霄劍", bonus:{atk:14,crit:6}},
+  {id:"w4", slot:"weapon", tier:"甲", name:"紫微劍", bonus:{atk:22,crit:10}},
+  {id:"a1", slot:"armor", tier:"丁", name:"布甲", bonus:{def:3,hpmax:10}},
+  {id:"a2", slot:"armor", tier:"丙", name:"鱗甲", bonus:{def:6,hpmax:20}},
+  {id:"a3", slot:"armor", tier:"乙", name:"玄鐵甲", bonus:{def:11,hpmax:35}},
+  {id:"a4", slot:"armor", tier:"甲", name:"龍鱗戰袍", bonus:{def:18,hpmax:55}},
+  {id:"ac1", slot:"accessory", tier:"丁", name:"玉珮", bonus:{spd:3}},
+  {id:"ac2", slot:"accessory", tier:"丙", name:"避風珠", bonus:{spd:6,def:2}},
+  {id:"ac3", slot:"accessory", tier:"乙", name:"星光墜", bonus:{spd:10,crit:4}},
+  {id:"ac4", slot:"accessory", tier:"甲", name:"太虛符印", bonus:{spd:14,crit:8,hpmax:15}}
+];
+function getItem(id){ return ITEMS.find(i=>i.id===id); }
+const SLOT_LABEL = {weapon:"武器", armor:"防具", accessory:"飾品"};
+
+/* 每個道途 3 招，依境界（stageIdx）解鎖 */
+const PATH_SKILLS = {
+  dao:[
+    {id:"dao1", name:"清靜無為", unlock:1, cost:8, type:"heal", power:18, desc:"收攝心神，緩緩回氣。"},
+    {id:"dao2", name:"隨風而化", unlock:3, cost:14, type:"debuff", stat:"atk", power:0.3, desc:"以柔克剛，卸去敵方攻勢兩回合。"},
+    {id:"dao3", name:"長生訣", unlock:5, cost:22, type:"attack", power:2.0, desc:"引動根本道元，一擊蘊含歲月之力。"}
+  ],
+  ru:[
+    {id:"ru1", name:"克己復禮", unlock:1, cost:8, type:"buff", stat:"def", power:0.35, desc:"持身守禮，穩若磐石兩回合。"},
+    {id:"ru2", name:"有教無類", unlock:3, cost:14, type:"heal", power:22, desc:"以仁育人，亦育己身。"},
+    {id:"ru3", name:"浩然正氣", unlock:5, cost:22, type:"attack", power:1.8, desc:"胸中一股浩然之氣，直搗敵陣。"}
+  ],
+  mo:[
+    {id:"mo1", name:"兼愛", unlock:1, cost:8, type:"heal", power:16, desc:"視人如己，亦懂得善待自身。"},
+    {id:"mo2", name:"止戈", unlock:3, cost:14, type:"debuff", stat:"def", power:0.3, desc:"墨者巧技，瓦解敵方守勢兩回合。"},
+    {id:"mo3", name:"巨子之怒", unlock:5, cost:22, type:"attack", power:2.1, desc:"墨門絕學迸發，勢不可擋。"}
+  ],
+  fa:[
+    {id:"fa1", name:"明法", unlock:1, cost:8, type:"debuff", stat:"atk", power:0.25, desc:"以律令威懾，亂敵陣腳兩回合。"},
+    {id:"fa2", name:"重刑", unlock:3, cost:14, type:"attack", power:1.6, desc:"刑重威烈，直取要害。"},
+    {id:"fa3", name:"勢不可擋", unlock:5, cost:22, type:"attack", power:2.2, desc:"法勢烈刑，一擊定勝負。"}
+  ],
+  bing:[
+    {id:"bing1", name:"先發制人", unlock:1, cost:8, type:"attack", power:1.4, desc:"料敵機先，搶得先手。"},
+    {id:"bing2", name:"調兵遣將", unlock:3, cost:14, type:"buff", stat:"atk", power:0.25, desc:"運籌帷幄，士氣大振兩回合。"},
+    {id:"bing3", name:"十面埋伏", unlock:5, cost:22, type:"attack", power:2.3, desc:"兵法絕殺，四面楚歌。"}
+  ],
+  shang:[
+    {id:"shang1", name:"以利誘之", unlock:1, cost:8, type:"debuff", stat:"spd", power:0.3, desc:"財帛動人心，亂敵步伐兩回合。"},
+    {id:"shang2", name:"囤積居奇", unlock:3, cost:14, type:"heal", power:20, desc:"善用資源，回氣亦回元。"},
+    {id:"shang3", name:"傾家一擲", unlock:5, cost:22, type:"attack", power:2.0, desc:"孤注一擲，贏面盡收。"}
+  ]
+};
+function unlockedSkills(){
+  const list = PATH_SKILLS[state.pathId] || [];
+  return list.filter(s=>flow.stageIdx>=s.unlock);
+}
+
+const NORMAL_ENEMIES = [
+  {id:"bandit", name:"剪徑毛賊", hp:40, atk:8, def:2, spd:5, daoyuan:[8,15], itemChance:.25, itemPool:["w1","a1","ac1"], flavor:"一夥剪徑的毛賊擋住了去路，看樣子只求財，不見得真想拚命。"},
+  {id:"wolves", name:"野狼群", hp:50, atk:10, def:3, spd:7, daoyuan:[10,18], itemChance:.22, itemPool:["w1","a1","ac1"], flavor:"一群餓狼從林間竄出，眼中閃著綠光。"},
+  {id:"rogue", name:"宵小術士", hp:45, atk:9, def:4, spd:6, daoyuan:[10,20], itemChance:.28, itemPool:["w2","a2","ac2"], flavor:"一名散修見財起意，仗著幾分道術便想圖謀不軌。"}
+];
+const ELITE_ENEMIES = [
+  {id:"demon", name:"邊荒游魔", hp:90, atk:16, def:7, spd:8, daoyuan:[25,40], itemChance:.4, itemPool:["w2","a2","ac2","w3","w4"], flavor:"一頭邊荒游魔自陰霾中撲出，周身縈繞著不祥的氣息。"},
+  {id:"guardian", name:"石像守衛", hp:110, atk:14, def:12, spd:4, daoyuan:[30,45], itemChance:.45, itemPool:["a3","w3","ac3","a4"], flavor:"一尊沉睡的仙宮石像守衛甦醒，緩慢卻不容小覷。"},
+  {id:"ashura", name:"修羅武士", hp:85, atk:19, def:6, spd:9, daoyuan:[28,42], itemChance:.42, itemPool:["w3","ac3","a3","ac4"], flavor:"一名修羅武士獨自遊蕩至此，見人便是嗜殺的目光。"}
+];
 
 /* ===================== 畫面切換 ===================== */
 function showScreen(id){
@@ -989,6 +1108,14 @@ function renderMap(){
     <span><i class="legend-dot"></i>可前往</span>
     <span><i class="legend-dot lock"></i>修為未足</span>`;
   wrap.appendChild(legend);
+
+  const charBtn = document.createElement("button");
+  charBtn.type = "button";
+  charBtn.className = "btn-ghost";
+  charBtn.style.marginTop = "14px";
+  charBtn.textContent = "查看人物與裝備";
+  charBtn.addEventListener("click", renderCharacterSheet);
+  wrap.appendChild(charBtn);
 }
 
 function buildMapElement(){
@@ -1049,8 +1176,377 @@ function pickNodeEvent(node){
 function travelTo(nodeId){
   flow.currentNodeId = nodeId;
   const node = MAP_NODES.find(n=>n.id===nodeId);
+  const dangerous = node.gate != null;
+  const combatChance = dangerous ? 0.45 : 0.18;
+  if(flow.movesUsed > 0 && Math.random() < combatChance){
+    const pool = dangerous ? ELITE_ENEMIES : NORMAL_ENEMIES;
+    const enemy = pool[Math.floor(Math.random()*pool.length)];
+    startCombat(enemy, node);
+    return;
+  }
   const ev = pickNodeEvent(node);
   renderEvent(ev, node);
+}
+
+/* ===================== 人物 / 紙娃娃 ===================== */
+function combatStats(){
+  let atk = 4 + state.gu*1.2 + state.wu*0.6;
+  let def = 2 + state.gu*1.0;
+  let spd = 4 + state.wu*0.6 + state.ji*0.6;
+  let crit = 5 + state.ji*1.2;
+  let hpmax = 60 + state.gu*7 + flow.stageIdx*12;
+  Object.values(state.equipment).forEach(id=>{
+    const it = id && getItem(id);
+    if(!it) return;
+    atk += it.bonus.atk||0; def += it.bonus.def||0; spd += it.bonus.spd||0;
+    crit += it.bonus.crit||0; hpmax += it.bonus.hpmax||0;
+  });
+  return {atk:Math.round(atk), def:Math.round(def), spd:Math.round(spd), crit:Math.round(crit), hpmax:Math.round(hpmax)};
+}
+
+function buildDollSvg(){
+  const eq = state.equipment;
+  const ns = "http://www.w3.org/2000/svg";
+  const svg = document.createElementNS(ns, "svg");
+  svg.setAttribute("class", "doll-svg");
+  svg.setAttribute("viewBox", "0 0 100 160");
+  svg.innerHTML = `
+    <circle class="doll-fill" cx="50" cy="26" r="16"/>
+    <path class="doll-fill" d="M32 46 Q50 38 68 46 L74 108 Q50 118 26 108 Z"/>
+    <path class="doll-line" d="M32 52 L14 92"/>
+    <path class="doll-line" d="M68 52 L86 92"/>
+    <path class="doll-line" d="M38 108 L34 152"/>
+    <path class="doll-line" d="M62 108 L66 152"/>
+  `;
+  const slots = [
+    {key:"weapon", x:86, y:92},
+    {key:"armor", x:50, y:80},
+    {key:"accessory", x:50, y:44}
+  ];
+  return {svg, slots};
+}
+
+function renderCharacterSheet(){
+  document.getElementById("story-card").classList.remove("trial-card");
+  document.getElementById("result-box").classList.add("hide");
+  const cs = currentCultStage();
+  document.getElementById("story-stage").textContent = "人物";
+  document.getElementById("story-index").textContent = `${cs.rank} ${cs.name}`;
+  document.getElementById("story-title").textContent = "赤心錄 · 紙上人物誌";
+  document.getElementById("story-text").innerHTML = "";
+  const wrap = document.getElementById("story-choices");
+  wrap.innerHTML = "";
+
+  const box = document.createElement("div");
+  box.className = "char-wrap";
+
+  const dollBox = document.createElement("div");
+  dollBox.className = "doll-box";
+  const {svg, slots} = buildDollSvg();
+  dollBox.appendChild(svg);
+  slots.forEach(s=>{
+    const btn = document.createElement("button");
+    const equippedId = state.equipment[s.key];
+    const it = equippedId && getItem(equippedId);
+    btn.type = "button";
+    btn.className = "slot-btn" + (it ? " filled" : "");
+    btn.style.left = (s.x/100*180) + "px";
+    btn.style.top = (s.y/160*280) + "px";
+    if(it) btn.style.borderColor = TIER_COLOR[it.tier];
+    btn.textContent = it ? it.tier : SLOT_LABEL[s.key];
+    btn.title = it ? `${it.name}（${it.tier}品）` : `${SLOT_LABEL[s.key]}：未裝備`;
+    btn.addEventListener("click", ()=> renderItemPicker(s.key));
+    dollBox.appendChild(btn);
+  });
+  box.appendChild(dollBox);
+
+  const stat = combatStats();
+  const readout = document.createElement("div");
+  readout.className = "stat-readout";
+  readout.innerHTML = `
+    <div class="stat-row"><span>氣血上限</span><b>${stat.hpmax}</b></div>
+    <div class="stat-row"><span>攻擊</span><b>${stat.atk}</b></div>
+    <div class="stat-row"><span>防禦</span><b>${stat.def}</b></div>
+    <div class="stat-row"><span>速度</span><b>${stat.spd}</b></div>
+    <div class="stat-row"><span>暴擊</span><b>${stat.crit}%</b></div>
+    <div class="stat-row"><span>已得裝備</span><b>${state.inventory.length}</b></div>
+  `;
+  const skillHead = document.createElement("div");
+  skillHead.style.marginTop = "6px";
+  skillHead.innerHTML = `<div class="stat-row" style="border:none;"><span>已悟技能（${state.pathName}）</span><b></b></div>`;
+  readout.appendChild(skillHead);
+  const skillList = document.createElement("div");
+  skillList.className = "skill-list";
+  const learned = unlockedSkills();
+  if(learned.length === 0){
+    skillList.innerHTML = `<div class="skill-row" style="color:var(--muted)">尚未有可用技能，境界更進一步後自然通曉。</div>`;
+  } else {
+    learned.forEach(sk=>{
+      const row = document.createElement("div");
+      row.className = "skill-row";
+      row.innerHTML = `<b>${sk.name}</b>（耗道元 ${sk.cost}）<br>${sk.desc}`;
+      skillList.appendChild(row);
+    });
+  }
+  readout.appendChild(skillList);
+  box.appendChild(readout);
+  wrap.appendChild(box);
+
+  const backBtn = document.createElement("button");
+  backBtn.type = "button";
+  backBtn.className = "btn-ghost";
+  backBtn.style.marginTop = "18px";
+  backBtn.textContent = "← 返回地圖";
+  backBtn.addEventListener("click", renderMap);
+  wrap.appendChild(backBtn);
+}
+
+function renderItemPicker(slotKey){
+  document.getElementById("story-title").textContent = `選擇${SLOT_LABEL[slotKey]}`;
+  const wrap = document.getElementById("story-choices");
+  wrap.innerHTML = "";
+  const list = document.createElement("div");
+  list.className = "item-pick-list";
+
+  const noneRow = document.createElement("div");
+  noneRow.className = "item-row";
+  noneRow.innerHTML = `<span>不裝備</span>`;
+  noneRow.addEventListener("click", ()=>{ state.equipment[slotKey] = null; renderCharacterSheet(); });
+  list.appendChild(noneRow);
+
+  state.inventory.filter(id=>getItem(id).slot===slotKey).forEach(id=>{
+    const it = getItem(id);
+    const bonusText = Object.entries(it.bonus).map(([k,v])=>{
+      const label = {atk:"攻擊",def:"防禦",spd:"速度",crit:"暴擊",hpmax:"氣血"}[k];
+      return `${label}+${v}`;
+    }).join(" ");
+    const row = document.createElement("div");
+    row.className = "item-row";
+    row.innerHTML = `<span><b>${it.name}</b> <span class="tier-tag" style="color:${TIER_COLOR[it.tier]}">${it.tier}品</span></span><span class="bonus">${bonusText}</span>`;
+    row.addEventListener("click", ()=>{ state.equipment[slotKey] = it.id; renderCharacterSheet(); });
+    list.appendChild(row);
+  });
+  wrap.appendChild(list);
+
+  const backBtn = document.createElement("button");
+  backBtn.type = "button";
+  backBtn.className = "btn-ghost";
+  backBtn.style.marginTop = "18px";
+  backBtn.textContent = "← 返回人物";
+  backBtn.addEventListener("click", renderCharacterSheet);
+  wrap.appendChild(backBtn);
+}
+
+/* ===================== 戰鬥 ===================== */
+let combat = null;
+
+function startCombat(enemyTpl, node){
+  const stat = combatStats();
+  combat = {
+    enemy: {...enemyTpl, hpCur: enemyTpl.hp},
+    hpCur: stat.hpmax, hpMax: stat.hpmax,
+    playerBuff:{atkMult:1, defMult:1, spdMult:1, rounds:0},
+    enemyDebuff:{atkMult:1, defMult:1, spdMult:1, rounds:0},
+    node, log:[enemyTpl.flavor]
+  };
+  renderCombat();
+}
+
+function combatLog(msg){
+  combat.log.push(msg);
+  if(combat.log.length > 6) combat.log.shift();
+}
+
+function renderCombat(){
+  const stat = combatStats();
+  document.getElementById("story-card").classList.remove("trial-card");
+  document.getElementById("result-box").classList.add("hide");
+  document.getElementById("story-stage").textContent = combat.node.name;
+  document.getElementById("story-index").textContent = "遭遇戰";
+  document.getElementById("story-title").textContent = `遭遇：${combat.enemy.name}`;
+
+  const vs = document.createElement("div");
+  vs.className = "combat-vs";
+  const enemyPct = Math.max(0, combat.enemy.hpCur / combat.enemy.hp * 100);
+  const playerPct = Math.max(0, combat.hpCur / combat.hpMax * 100);
+  vs.innerHTML = `
+    <div class="combat-side">
+      <div class="combat-name"><span class="who">${combat.enemy.name}</span><span>${Math.max(0,combat.enemy.hpCur)} / ${combat.enemy.hp}</span></div>
+      <div class="combat-hp-track"><div class="combat-hp-fill enemy" style="width:${enemyPct}%"></div></div>
+    </div>
+    <div class="combat-side">
+      <div class="combat-name"><span class="who">你</span><span>${Math.max(0,combat.hpCur)} / ${combat.hpMax}　道元 ${state.daoyuan}</span></div>
+      <div class="combat-hp-track"><div class="combat-hp-fill" style="width:${playerPct}%"></div></div>
+    </div>`;
+  document.getElementById("story-text").innerHTML = "";
+  document.getElementById("story-text").appendChild(vs);
+
+  const log = document.createElement("div");
+  log.className = "combat-log";
+  log.innerHTML = combat.log.map(l=>`<div>${l}</div>`).join("");
+  document.getElementById("story-text").appendChild(log);
+
+  const wrap = document.getElementById("story-choices");
+  wrap.innerHTML = "";
+  const actions = document.createElement("div");
+  actions.className = "combat-actions";
+
+  const atkBtn = document.createElement("button");
+  atkBtn.className = "choice-btn"; atkBtn.textContent = "〔攻擊〕基礎一擊";
+  atkBtn.addEventListener("click", ()=> playerCombatAction({type:"attack", power:1}));
+  actions.appendChild(atkBtn);
+
+  const skillBtn = document.createElement("button");
+  skillBtn.className = "choice-btn"; skillBtn.textContent = "〔技能〕施展所學";
+  skillBtn.addEventListener("click", renderSkillMenu);
+  actions.appendChild(skillBtn);
+
+  const fleeBtn = document.createElement("button");
+  fleeBtn.className = "choice-btn"; fleeBtn.textContent = "〔逃跑〕脫身而去";
+  fleeBtn.addEventListener("click", attemptFlee);
+  actions.appendChild(fleeBtn);
+
+  wrap.appendChild(actions);
+  renderSidebar();
+}
+
+function renderSkillMenu(){
+  const wrap = document.getElementById("story-choices");
+  wrap.innerHTML = "";
+  const menu = document.createElement("div");
+  menu.className = "skill-menu";
+  const learned = unlockedSkills();
+  if(learned.length===0){
+    menu.innerHTML = `<div class="skill-row">尚未習得任何技能。</div>`;
+  }
+  learned.forEach(sk=>{
+    const b = document.createElement("button");
+    b.className = "choice-btn";
+    const disabled = state.daoyuan < sk.cost;
+    b.disabled = disabled;
+    if(disabled) b.style.opacity = ".45";
+    b.innerHTML = `<b>${sk.name}</b>（耗道元 ${sk.cost}）<br><span class="cn">${sk.desc}</span>`;
+    b.addEventListener("click", ()=>{
+      state.daoyuan -= sk.cost;
+      playerCombatAction({type:sk.type, power:sk.power, stat:sk.stat, name:sk.name});
+    });
+    menu.appendChild(b);
+  });
+  const backBtn = document.createElement("button");
+  backBtn.className = "btn-ghost"; backBtn.style.marginTop="10px";
+  backBtn.textContent = "← 返回";
+  backBtn.addEventListener("click", renderCombat);
+  menu.appendChild(backBtn);
+  wrap.appendChild(menu);
+}
+
+function rollDamage(atk, def, critChance){
+  let dmg = Math.max(1, Math.round(atk - def*0.5));
+  const isCrit = Math.random()*100 < critChance;
+  if(isCrit) dmg = Math.round(dmg*1.6);
+  dmg = Math.max(1, dmg + Math.round(Math.random()*6-3));
+  return {dmg, isCrit};
+}
+
+function playerCombatAction(action){
+  const stat = combatStats();
+  const e = combat.enemy;
+  if(action.type === "attack"){
+    const eDef = e.def * combat.enemyDebuff.defMult;
+    const {dmg, isCrit} = rollDamage(stat.atk * action.power * combat.playerBuff.atkMult, eDef, stat.crit);
+    e.hpCur -= dmg;
+    combatLog(`你${action.name?`施展【${action.name}】`:"揮擊"}，造成 ${dmg} 點傷害${isCrit?"（會心一擊！）":""}。`);
+  } else if(action.type === "heal"){
+    const heal = Math.round(action.power);
+    combat.hpCur = Math.min(combat.hpMax, combat.hpCur + heal);
+    combatLog(`你施展【${action.name}】，回復 ${heal} 點氣血。`);
+  } else if(action.type === "buff"){
+    const base = {atkMult:1, defMult:1, spdMult:1, rounds:2};
+    base[action.stat+"Mult"] = 1 + action.power;
+    combat.playerBuff = base;
+    combatLog(`你施展【${action.name}】，${action.stat==="def"?"守勢":action.stat==="spd"?"身法":"攻勢"}大振。`);
+  } else if(action.type === "debuff"){
+    const base = {atkMult:1, defMult:1, spdMult:1, rounds:2};
+    base[action.stat+"Mult"] = 1 - action.power;
+    combat.enemyDebuff = base;
+    combatLog(`你施展【${action.name}】，敵方${action.stat==="def"?"守勢":action.stat==="spd"?"身法":"氣勢"}受挫。`);
+  }
+  renderSidebar();
+  if(e.hpCur <= 0){ combatVictory(); return; }
+  enemyTurn();
+}
+
+function enemyTurn(){
+  const stat = combatStats();
+  const e = combat.enemy;
+  const effEnemySpd = e.spd * combat.enemyDebuff.spdMult;
+  const dodgeChance = Math.max(3, Math.min(30, (stat.spd*combat.playerBuff.spdMult - effEnemySpd)*1.5 + 6));
+  if(Math.random()*100 < dodgeChance){
+    combatLog(`${e.name}出手，你身法一閃，堪堪避開。`);
+  } else {
+    const pDef = stat.def * combat.playerBuff.defMult;
+    const {dmg} = rollDamage(e.atk * combat.enemyDebuff.atkMult, pDef, 5);
+    combat.hpCur -= dmg;
+    combatLog(`${e.name}反擊，你受到 ${dmg} 點傷害。`);
+  }
+  if(combat.playerBuff.rounds>0){ combat.playerBuff.rounds--; if(combat.playerBuff.rounds<=0) combat.playerBuff={atkMult:1,defMult:1,spdMult:1,rounds:0}; }
+  if(combat.enemyDebuff.rounds>0){ combat.enemyDebuff.rounds--; if(combat.enemyDebuff.rounds<=0) combat.enemyDebuff={atkMult:1,defMult:1,spdMult:1,rounds:0}; }
+  if(combat.hpCur <= 0){ combatDefeat(); return; }
+  renderCombat();
+}
+
+function attemptFlee(){
+  const stat = combatStats();
+  const chance = Math.max(20, Math.min(85, 50 + (stat.spd - combat.enemy.spd)*3));
+  if(Math.random()*100 < chance){
+    combatLog(`你瞅準空檔，脫身而去。`);
+    endCombat({fled:true});
+  } else {
+    combatLog(`你想脫身，卻被${combat.enemy.name}纏住，未能走脫！`);
+    enemyTurn();
+  }
+}
+
+function combatVictory(){
+  const e = combat.enemy;
+  const gain = e.daoyuan[0] + Math.floor(Math.random()*(e.daoyuan[1]-e.daoyuan[0]+1));
+  state.daoyuan += gain;
+  let dropText = "";
+  if(Math.random() < e.itemChance){
+    const dropId = e.itemPool[Math.floor(Math.random()*e.itemPool.length)];
+    if(!state.inventory.includes(dropId)){
+      state.inventory.push(dropId);
+      const it = getItem(dropId);
+      dropText = `，並拾得【${it.name}】（${it.tier}品${SLOT_LABEL[it.slot]}）`;
+    }
+  }
+  state.journal.push({stage:combat.node.name, title:`遭遇：${e.name}`, choice:`力克強敵，得道元 ${gain}${dropText}`});
+  showCombatResult(`你擊敗了${e.name}，得道元 ${gain} 點${dropText}。`, {daoyuan:gain});
+}
+
+function combatDefeat(){
+  const e = combat.enemy;
+  state.health = Math.max(0, state.health - 20);
+  state.journal.push({stage:combat.node.name, title:`遭遇：${e.name}`, choice:"寡不敵眾，狼狽而退"});
+  showCombatResult(`你不敵${e.name}，狼狽脫身，元氣大傷。`, {health:-20});
+}
+
+function endCombat(opts){
+  combat = null;
+  renderSidebar();
+  if(state.health<=0){ finishGame(); return; }
+  flow.movesUsed++;
+  afterMove();
+}
+
+function showCombatResult(text, effects){
+  document.getElementById("story-choices").innerHTML = "";
+  const box = document.getElementById("result-box");
+  box.classList.remove("hide");
+  document.getElementById("result-text").textContent = text;
+  document.getElementById("result-chips").innerHTML = effectChips(effects);
+  renderSidebar();
+  document.getElementById("btn-continue").onclick = ()=> endCombat({});
 }
 
 function renderEvent(ev, node){
@@ -1207,7 +1703,9 @@ function finishGame(){
   showScreen("screen-end");
   document.getElementById("end-sub").textContent = ending.sub;
   document.getElementById("end-title").textContent = ending.title;
-  document.getElementById("end-body").innerHTML = ending.body.split("\n\n").map(p=>`<p>${p}</p>`).join("");
+  const equipped = Object.entries(state.equipment).filter(([,id])=>id).map(([slot,id])=>`${SLOT_LABEL[slot]}：${getItem(id).name}（${getItem(id).tier}品）`).join("　");
+  const gearLine = equipped ? `<p style="font-size:13px;color:var(--muted);">終末所佩：${equipped}</p>` : "";
+  document.getElementById("end-body").innerHTML = ending.body.split("\n\n").map(p=>`<p>${p}</p>`).join("") + gearLine;
   document.getElementById("end-journal").innerHTML = state.journal.map(j=>`<li><b>${j.stage}</b> · ${j.title}：${j.choice}</li>`).join("");
 }
 
