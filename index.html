@@ -993,7 +993,8 @@ function newState(){
     equipment:{weapon:null, armor:null, accessory:null},
     inventory:[],
     age:16, days:0,
-    combatWins:0, eliteWins:0, townsVisited:[], questsClaimed:[]
+    combatWins:0, eliteWins:0, townsVisited:[], questsClaimed:[],
+    story:{}, mainStoryShown:[]
   };
 }
 
@@ -1098,6 +1099,88 @@ const QUESTS = [
     check:()=> state.chixin>=80, progress:()=> `赤心 ${Math.min(state.chixin,80)}/80`,
     reward:{daotong:10, chixin:5}, rewardText:"道統聲望 +10、赤心 +5" }
 ];
+
+/* ===================== 主線劇情（原創，與原著具體情節無涉） ===================== */
+/* 每個境界固定觸發一段，貫穿全篇的是「半枚玉珏」與少年顧懷安的下落，最終牽出無生教的一樁陰謀。 */
+const MAIN_STORY = [
+  { stageIdx:0, title:"雪夜半珏",
+    text:"楓林鎮外的雪地裡，你撞見一場血案的尾聲——一名與你年紀相仿的少年倒在血泊中，懷裡死死護著半枚刻滿古怪符文的玉珏，身後隱約有黑影追殺而來的痕跡。",
+    choices:[
+      {label:"拚死救下他", cn:"赤心",
+        result:"你不顧凶險把他拖回藥鋪，連夜替他止血療傷。他昏迷前只掙扎著說了一句：「他們要滅口……我看見了不該看見的東西……」醒來後他已不見蹤影，只留下這半枚玉珏。",
+        effects:{chixin:12, health:-8}, set:(s)=>{ s.story.savedHuaian=true; }},
+      {label:"先護住自己，只取玉珏", cn:"機緣",
+        result:"你權衡再三，終究不敢招惹背後的凶險，只趁亂拾起那半枚玉珏，眼睜睜看著少年被黑影拖走，消失在風雪中。",
+        effects:{ji:1, chixin:-8}, set:(s)=>{ s.story.savedHuaian=false; }},
+      {label:"遠遠記下線索，不出手", cn:"悟性",
+        result:"你按捺住惻隱之心，只遠遠記下了黑影的特徵與玉珏的紋樣。少年終究被拖走，你卻也因此多留了一分底細。",
+        effects:{wu:1, chixin:-4}, set:(s)=>{ s.story.savedHuaian=false; s.story.investigated=true; }}
+    ]},
+  { stageIdx:1, title:"謎案的傳聞",
+    text:(s)=> s.story.savedHuaian
+      ? "你在集市聽聞一樁流傳的舊聞——數月前雪夜失蹤的那名少年，似乎曾在太虛閣的巡察名冊上一閃而過，隨後再無音訊。你摩挲著懷中那半枚玉珏，不知他是否還活著。"
+      : "你在集市聽聞一樁流傳的舊聞——那半枚玉珏的紋樣，竟與傳說中『雪夜孤兒案』的信物有幾分相似。你隱約覺得，自己可能捲入了什麼不該捲入的事。",
+    choices:[
+      {label:"私下打聽案件詳情", cn:"機緣", result:"你多方打聽，得知那孩子似乎撞見了無生教與某位權貴的秘密勾當，才招來殺身之禍。", effects:{ji:1, xie:4}},
+      {label:"將線索交給太虛閣", cn:"道統", result:"你將手中線索呈報太虛閣，換來一份庇護的口信，只是這樁案子似乎牽連太廣，太虛閣也只讓你靜觀其變。", effects:{daotong:8}},
+      {label:"不再過問，收起玉珏", cn:"赤心", result:"你決定不再追問，只把玉珏貼身收好——只是心底那份牽掛，終究揮之不去。", effects:{chixin:4}}
+    ]},
+  { stageIdx:2, title:"無生教的陰影",
+    text:(s)=> s.story.savedHuaian
+      ? "一名風塵僕僕的信使找上你，說那少年（此時你才知道他名喚顧懷安）託他捎來口信：他仍活著，卻身陷無生教的追殺，懇求你設法接應。"
+      : "你查訪多時，終於得知那少年名喚顧懷安，如今仍被無生教通緝追殺——只因他撞破了教中高層與某位權貴的秘密勾結。",
+    choices:[
+      {label:"設法接應，施以援手", cn:"赤心", result:"你冒險出手接應，顧懷安終於脫險，對你感激涕零。你們自此結下不淺的交情。", effects:{chixin:10, ren:2, jianghu:6}, set:(s)=>{ s.story.alliedHuaian=true; }},
+      {label:"袖手旁觀，靜觀其變", cn:"機緣", result:"你選擇按兵不動，顧懷安最終是死是活，你不得而知，只是那半枚玉珏，始終沉甸甸地壓在心口。", effects:{ji:1, chixin:-6}, set:(s)=>{ s.story.alliedHuaian=false; }},
+      {label:"暗中調查無生教底細", cn:"悟性", result:"你沒有直接出手，卻順藤摸瓜查到了無生教在此地的幾處據點，這份情報，日後或許用得上。", effects:{wu:2, xie:4}, set:(s)=>{ s.story.investigated=true; }}
+    ]},
+  { stageIdx:3, title:"另一半玉珏",
+    text:"你輾轉打聽到，另外半枚玉珏似乎藏在牧國神都的密室之中，與蒼圖神教內部一樁陳年秘辛有關——傳聞那是近古仙宮覆滅前，留給後世的一把鑰匙。",
+    choices:[
+      {label:"隻身潛入密室查探", cn:"機緣", result:"你孤身犯險，九死一生取得了另一半玉珏的線索，只是也因此驚動了不少耳目。", effects:{ji:2, daoyuan:15, health:-10}, set:(s)=>{ s.story.pursuedKey=true; }},
+      {label:"透過太虛閣正式行文查訪", cn:"廟堂", result:"你循正規途徑行文查訪，雖進度緩慢，卻也穩妥，太虛閣答應會持續關注此事。", effects:{miao:10, daoyuan:8}},
+      {label:"決定不再插手此事", cn:"赤心", result:"你思量再三，終究覺得此事牽連太廣，非你一介修士能撼動，便將玉珏鎖入行囊，不再多想。", effects:{chixin:-4, health:6}}
+    ]},
+  { stageIdx:4, title:"真相初現",
+    text:"拼湊起所有線索，你終於窺見了事情的全貌——那枚合璧的玉珏，竟是開啟近古某座仙宮禁地的鑰匙，無生教處心積慮，似乎想借禁地之力，重現當年近古魔潮之禍。",
+    choices:[
+      {label:"決心阻止無生教的陰謀", cn:"赤心", result:"你握緊玉珏，心中已有決斷——無論代價幾何，這樣的禍事，絕不能任其發生。", effects:{chixin:14, daotong:10}},
+      {label:"聯絡更有實力的人相助", cn:"人脈", result:"你權衡自身實力，決定聯絡太虛閣與六雄勢力，將這燙手山芋轉交給更有能力應對的人。", effects:{ren:2, miao:8}},
+      {label:"心底閃過一絲貪念", cn:"機緣", result:"一個念頭在你心底一閃而過——若能搶先一步，禁地之力未必不能為己所用。你隨即為自己這個念頭感到心驚。", effects:{ji:1, xie:10, chixin:-8}}
+    ]},
+  { stageIdx:5, title:"決戰前夕",
+    text:(s)=> s.story.alliedHuaian
+      ? "顧懷安尋你而來，一身傷痕卻難掩堅毅，提出願與你並肩，共赴無生教在此地的最後據點。"
+      : "你隻身探查無生教的最後據點，途中意外撞見一個熟悉又蒼老幾分的身影——正是那年雪夜失蹤的顧懷安，他鄉重逢，恍如隔世。",
+    choices:[
+      {label:"與他並肩迎戰", cn:"根骨", result:"你們並肩闖入據點，一番惡戰下來，重創了無生教在此地的勢力根基。", effects:{gu:2, jianghu:10, xie:-10, health:-12}, set:(s)=>{ s.story.alliedHuaian=true; }},
+      {label:"讓他留守，自己深入", cn:"悟性", result:"你讓他留守接應，自己孤身深入敵陣，雖多了幾分凶險，卻也少了幾分牽絆。", effects:{wu:2, daoyuan:15, health:-14}},
+      {label:"暫時撤退，以策萬全", cn:"機緣", result:"你權衡利弊，決定暫時撤退，不做無謂的犧牲——來日方長。", effects:{ji:1, chixin:2}}
+    ]},
+  { stageIdx:6, title:"玉珏的抉擇",
+    text:"合璧的玉珏終於握在你手中。星穹聖樓落成在即，你必須決定，如何處置這枚牽動了你此生際遇的信物。",
+    choices:[
+      {label:"當眾摧毀玉珏，絕禁地之患", cn:"赤心", result:"你當眾將玉珏摧毀，那份足以撼動天下的禁地之力，自此徹底斷絕。無生教的陰謀，終究成了一場空。", effects:{chixin:16, daotong:10}, set:(s)=>{ s.story.artifactFate="destroyed"; }},
+      {label:"上交太虛閣，交由天下公斷", cn:"廟堂", result:"你將玉珏鄭重交給太虛閣，是福是禍，自有天下公論裁斷。", effects:{miao:14, daotong:6}, set:(s)=>{ s.story.artifactFate="handed"; }},
+      {label:"留在自己手中，靜觀其變", cn:"機緣", result:"你終究還是把玉珏留在了自己手中——這份力量，你想親自看顧，不假他人之手。", effects:{ji:2, xie:6}, set:(s)=>{ s.story.artifactFate="kept"; }}
+    ]}
+];
+
+function buildStoryEpilogue(s){
+  if(!s.mainStoryShown || s.mainStoryShown.length===0) return "";
+  let artifactPart;
+  if(s.story.artifactFate==="destroyed") artifactPart = "那枚曾牽動無生教陰謀的玉珏，終究化為齏粉，禁地之力永絕於世。";
+  else if(s.story.artifactFate==="handed") artifactPart = "那枚玉珏交由太虛閣封存，此後數十年，天下再無人敢輕易招惹那座禁地的傳說。";
+  else if(s.story.artifactFate==="kept") artifactPart = "那枚玉珏始終貼身收在你懷中，你從未對第三人提起過它真正的來歷與份量。";
+  else artifactPart = "那半枚玉珏的命運，終究隨著你未竟的路途，一同懸而未決。";
+
+  let huaianPart;
+  if(s.story.alliedHuaian) huaianPart = "顧懷安此後與你時常書信往來，你們算是這亂世裡，少有的一份始終如一的情誼。";
+  else if(s.story.savedHuaian) huaianPart = "顧懷安的下落，你此後再未打聽到——你偶爾會想，那個雪夜裡自己做的抉擇，究竟是不是對的。";
+  else huaianPart = "顧懷安的名字，終究只是你此生擦肩而過的一個陌生名字，你甚至不確定他是否真的活了下來。";
+
+  return `\n\n【主線·雪夜半珏】${artifactPart}${huaianPart}`;
+}
 
 /* ===================== 畫面切換 ===================== */
 function showScreen(id){
@@ -1249,11 +1332,56 @@ function renderStageIntro(){
   const btn = document.createElement("button");
   btn.className = "choice-btn"; btn.style.maxWidth = "220px";
   btn.textContent = "踏上行程 →";
-  btn.addEventListener("click", ()=>{
+  btn.addEventListener("click", proceedFromStageIntro);
+  wrap.appendChild(btn);
+}
+
+function proceedFromStageIntro(){
+  const pending = MAIN_STORY.find(m=>m.stageIdx===flow.stageIdx && !state.mainStoryShown.includes(m.stageIdx));
+  if(pending){ renderMainStoryEvent(pending); return; }
+  if(flow.stageIdx >= CULT_STAGES.length || flow.movesUsed >= flow.maxMoves){ renderFinale(); }
+  else { renderMap(); }
+}
+
+/* ---------- 主線劇情 ---------- */
+function renderMainStoryEvent(entry){
+  document.getElementById("story-card").classList.remove("trial-card");
+  document.getElementById("result-box").classList.add("hide");
+  const cs = currentCultStage();
+  document.getElementById("story-stage").textContent = "主線";
+  document.getElementById("story-index").textContent = `${cs.rank} ${cs.name}`;
+  document.getElementById("story-title").textContent = entry.title;
+  const text = typeof entry.text === "function" ? entry.text(state) : entry.text;
+  document.getElementById("story-text").innerHTML = `<p>${text}</p>`;
+  const wrap = document.getElementById("story-choices");
+  wrap.innerHTML = "";
+  entry.choices.forEach(c=>{
+    const b = document.createElement("button");
+    b.className = "choice-btn";
+    b.innerHTML = `<span class="cn">〔${c.cn}〕</span>${c.label}`;
+    b.addEventListener("click", ()=> resolveMainStoryChoice(entry, c));
+    wrap.appendChild(b);
+  });
+  renderSidebar();
+}
+
+function resolveMainStoryChoice(entry, choice){
+  applyEffects(choice.effects);
+  if(choice.set) choice.set(state);
+  state.mainStoryShown.push(entry.stageIdx);
+  state.journal.push({stage:"主線·"+entry.title, title:entry.title, choice:choice.label});
+  renderSidebar();
+
+  document.getElementById("story-choices").innerHTML = "";
+  const box = document.getElementById("result-box");
+  box.classList.remove("hide");
+  document.getElementById("result-text").textContent = choice.result;
+  document.getElementById("result-chips").innerHTML = effectChips(choice.effects);
+  document.getElementById("btn-continue").onclick = ()=>{
+    if(state.health<=0){ finishGame(); return; }
     if(flow.stageIdx >= CULT_STAGES.length || flow.movesUsed >= flow.maxMoves){ renderFinale(); }
     else { renderMap(); }
-  });
-  wrap.appendChild(btn);
+  };
 }
 
 /* ---------- 地圖 ---------- */
@@ -2334,7 +2462,9 @@ function finishGame(){
   document.getElementById("end-title").textContent = ending.title;
   const equipped = Object.entries(state.equipment).filter(([,id])=>id).map(([slot,id])=>`${SLOT_LABEL[slot]}：${getItem(id).name}（${getItem(id).tier}品）`).join("　");
   const gearLine = equipped ? `<p style="font-size:13px;color:var(--muted);">終末所佩：${equipped}</p>` : "";
-  document.getElementById("end-body").innerHTML = ending.body.split("\n\n").map(p=>`<p>${p}</p>`).join("") + gearLine;
+  const epilogue = buildStoryEpilogue(state);
+  const epilogueHtml = epilogue ? epilogue.split("\n\n").filter(Boolean).map(p=>`<p style="color:var(--gold);">${p}</p>`).join("") : "";
+  document.getElementById("end-body").innerHTML = ending.body.split("\n\n").map(p=>`<p>${p}</p>`).join("") + epilogueHtml + gearLine;
   document.getElementById("end-journal").innerHTML = state.journal.map(j=>`<li><b>${j.stage}</b> · ${j.title}：${j.choice}</li>`).join("");
 }
 
