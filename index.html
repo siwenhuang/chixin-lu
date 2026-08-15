@@ -170,7 +170,7 @@
   }
 
   .panel{background:var(--paper-raised);border:1px solid var(--line);border-radius:6px;padding:16px 17px;}
-  .sidebar{display:flex;flex-direction:column;gap:14px;position:sticky;top:16px;}
+  .sidebar{display:flex;flex-direction:column;gap:14px;position:sticky;top:16px;min-width:0;}
   .id-line{font-family:var(--font-sans);font-size:12px;color:var(--muted);}
   .id-line b{color:var(--ink);font-family:var(--font-serif);font-size:15px;display:block;margin-top:2px;}
   .loc-line{font-family:var(--font-sans);font-size:12px;color:var(--muted);display:flex;justify-content:space-between;margin-top:10px;}
@@ -200,7 +200,7 @@
   .journal-list{list-style:none;margin:8px 0 0;padding:0;display:flex;flex-direction:column;gap:6px;max-height:220px;overflow-y:auto;}
   .journal-list li{font-size:12.5px;color:var(--ink-soft);border-left:2px solid var(--line);padding-left:8px;line-height:1.6;}
 
-  .story-card{min-height:420px;display:flex;flex-direction:column;}
+  .story-card{min-height:420px;min-width:0;display:flex;flex-direction:column;}
   .story-eyebrow{font-family:var(--font-sans);font-size:11.5px;letter-spacing:.24em;color:var(--vermillion);text-transform:uppercase;display:flex;justify-content:space-between;}
   .story-title{font-size:24px;margin:10px 0 14px;}
   .story-text{font-size:16px;line-height:2;color:var(--ink-soft);flex:1;}
@@ -225,27 +225,60 @@
   .trial-chance{font-family:var(--font-sans);font-size:12.5px;color:var(--gold);margin:6px 0 16px;}
 
   /* ---------- 地圖 ---------- */
-  .map-wrap{position:relative;width:100%;aspect-ratio:4/3;margin-top:6px;background:var(--paper);border:1px solid var(--line);border-radius:6px;overflow:hidden;}
+  .map-wrap{
+    position:relative;width:100%;aspect-ratio:16/11;min-height:420px;margin-top:8px;
+    border:1px solid var(--line);border-radius:10px;overflow:hidden;
+    box-shadow:inset 0 0 0 5px var(--paper), inset 0 0 0 6px var(--line);
+    background:
+      radial-gradient(ellipse 340px 200px at 50% 4%, color-mix(in srgb, var(--muted) 20%, transparent), transparent 72%),
+      radial-gradient(ellipse 320px 220px at 58% 100%, color-mix(in srgb, var(--indigo) 16%, transparent), transparent 70%),
+      radial-gradient(ellipse 260px 200px at 88% 38%, color-mix(in srgb, var(--gold) 12%, transparent), transparent 72%),
+      radial-gradient(ellipse 240px 200px at 6% 45%, color-mix(in srgb, var(--vermillion) 8%, transparent), transparent 72%),
+      var(--paper);
+  }
+  @media (max-width:760px){ .map-wrap{ min-height:340px; } }
+  .map-frame-title{
+    position:absolute;top:14px;left:16px;font-family:var(--font-serif);font-weight:700;
+    font-size:15px;letter-spacing:.4em;color:var(--ink-soft);opacity:.55;pointer-events:none;
+  }
+  .map-compass{position:absolute;top:14px;right:16px;width:26px;height:26px;opacity:.5;pointer-events:none;}
+  .map-region-label{
+    position:absolute;transform:translate(-50%,-50%);font-family:var(--font-serif);font-weight:700;
+    color:var(--ink-soft);opacity:.28;letter-spacing:.3em;white-space:nowrap;pointer-events:none;
+  }
   .map-lines{position:absolute;inset:0;width:100%;height:100%;}
-  .map-edge{stroke:var(--line);stroke-width:.6;}
+  .map-edge{stroke:var(--line);stroke-width:1.1;fill:none;stroke-dasharray:1 4;stroke-linecap:round;opacity:.85;}
   .map-nodes{position:absolute;inset:0;}
   .map-node{
     position:absolute;transform:translate(-50%,-50%);
-    display:flex;flex-direction:column;align-items:center;gap:4px;
+    display:flex;flex-direction:column;align-items:center;gap:6px;
     background:none;border:none;padding:2px;font-family:var(--font-sans);
   }
-  .map-dot{width:14px;height:14px;border-radius:50%;background:var(--paper-raised);border:2px solid var(--line);transition:transform .15s ease,border-color .15s ease;}
+  .map-dot{
+    width:32px;height:32px;border-radius:50%;background:var(--paper-raised);border:2px solid var(--line);
+    display:flex;align-items:center;justify-content:center;
+    font-family:var(--font-serif);font-size:14px;color:var(--ink-soft);
+    box-shadow:var(--shadow);
+    transition:transform .15s ease,border-color .15s ease,background .15s ease;
+  }
   .map-node.is-open{cursor:pointer;}
   .map-node.is-open .map-dot{border-color:var(--indigo-soft);}
-  .map-node.is-open:hover .map-dot{border-color:var(--vermillion);transform:scale(1.2);}
-  .map-node.is-current .map-dot{background:var(--vermillion);border-color:var(--vermillion);box-shadow:0 0 0 4px var(--vermillion-soft);}
-  .map-node.is-locked{cursor:not-allowed;opacity:.55;}
+  .map-node.is-open:hover .map-dot{border-color:var(--vermillion);transform:scale(1.14);}
+  .map-node.is-current .map-dot{background:var(--vermillion);border-color:var(--vermillion);color:#fff5ea;}
+  @keyframes node-pulse{
+    0%{ box-shadow:var(--shadow), 0 0 0 0 var(--vermillion-soft); }
+    70%{ box-shadow:var(--shadow), 0 0 0 11px transparent; }
+    100%{ box-shadow:var(--shadow), 0 0 0 0 transparent; }
+  }
+  .map-node.is-current .map-dot{ animation:node-pulse 2s ease-out infinite; }
+  .map-node.is-locked{cursor:not-allowed;opacity:.5;}
   .map-node.is-locked .map-dot{border-style:dashed;}
-  .map-node.is-special .map-dot{border-radius:3px;transform:rotate(45deg);}
-  .map-node.is-special:hover .map-dot{transform:rotate(45deg) scale(1.2);}
-  .map-name{font-size:11px;color:var(--ink-soft);white-space:nowrap;}
+  .map-node.is-special .map-dot{border-radius:8px;transform:rotate(45deg);}
+  .map-node.is-special .map-dot span{transform:rotate(-45deg);display:block;}
+  .map-node.is-special:hover .map-dot{transform:rotate(45deg) scale(1.14);}
+  .map-name{font-size:12px;color:var(--ink-soft);white-space:nowrap;background:color-mix(in srgb, var(--paper) 78%, transparent);padding:1px 6px;border-radius:3px;}
   .map-node.is-current .map-name{color:var(--vermillion);font-weight:700;}
-  .map-gate{font-size:9px;color:var(--muted);white-space:nowrap;}
+  .map-gate{font-size:9.5px;color:var(--muted);white-space:nowrap;}
   .map-legend{display:flex;gap:16px;flex-wrap:wrap;margin-top:12px;font-family:var(--font-sans);font-size:11px;color:var(--muted);align-items:center;}
   .map-legend span{display:inline-flex;align-items:center;gap:5px;}
   .legend-dot{width:9px;height:9px;border-radius:50%;display:inline-block;border:2px solid var(--indigo-soft);}
@@ -284,12 +317,22 @@
   .item-row .bonus{color:var(--muted);font-size:11.5px;}
 
   /* ---------- 戰鬥 ---------- */
-  .combat-vs{display:flex;flex-direction:column;gap:14px;margin-bottom:6px;}
-  .combat-side{display:flex;flex-direction:column;gap:4px;}
+  .combat-vs{display:flex;flex-direction:column;gap:18px;margin-bottom:6px;}
+  .combat-side{position:relative;display:flex;flex-direction:column;gap:4px;}
+  .combat-portrait{
+    width:52px;height:52px;border-radius:50%;flex:none;
+    display:flex;align-items:center;justify-content:center;
+    font-family:var(--font-serif);font-weight:700;font-size:20px;
+    background:var(--paper-raised);border:2px solid var(--line);color:var(--ink-soft);
+  }
+  .combat-side.enemy .combat-portrait{border-color:var(--evil);color:var(--evil);}
+  .combat-side.player .combat-portrait{border-color:var(--vermillion);color:var(--vermillion);}
+  .combat-head{display:flex;align-items:center;gap:12px;}
+  .combat-bars{flex:1;display:flex;flex-direction:column;gap:4px;}
   .combat-name{display:flex;justify-content:space-between;font-family:var(--font-sans);font-size:13px;}
   .combat-name .who{font-weight:700;}
   .combat-hp-track{height:10px;border-radius:5px;background:var(--paper-deep);overflow:hidden;}
-  .combat-hp-fill{height:100%;border-radius:5px;background:var(--vermillion);transition:width .25s ease;}
+  .combat-hp-fill{height:100%;border-radius:5px;background:var(--vermillion);transition:width .5s cubic-bezier(.2,.8,.3,1);}
   .combat-hp-fill.enemy{background:var(--evil);}
   .combat-log{
     background:var(--paper);border:1px dashed var(--line);border-radius:4px;
@@ -298,7 +341,36 @@
   }
   .combat-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
   .combat-actions .choice-btn{margin:0;}
+  .combat-actions .choice-btn:disabled{opacity:.4;cursor:not-allowed;}
   .skill-menu{display:flex;flex-direction:column;gap:8px;margin-top:8px;}
+  .combat-waiting{font-family:var(--font-sans);font-size:12.5px;color:var(--muted);text-align:center;padding:10px;}
+
+  @keyframes fx-float{
+    0%{ transform:translate(-50%,0) scale(1); opacity:1; }
+    100%{ transform:translate(-50%,-38px) scale(1.05); opacity:0; }
+  }
+  .fx-number{
+    position:absolute;left:50%;top:-4px;transform:translate(-50%,0);
+    font-family:var(--font-sans);font-weight:800;font-size:19px;
+    animation:fx-float .85s ease-out forwards;pointer-events:none;z-index:5;
+    text-shadow:0 1px 3px color-mix(in srgb, var(--ink) 40%, transparent);
+  }
+  .fx-number.dmg{color:var(--vermillion);}
+  .fx-number.crit{color:var(--vermillion);font-size:26px;}
+  .fx-number.heal{color:var(--indigo);}
+  .fx-number.dodge{color:var(--muted);font-size:12.5px;font-weight:600;}
+  @keyframes fx-shake{
+    0%,100%{ transform:translateX(0); }
+    20%{ transform:translateX(-7px); } 40%{ transform:translateX(6px); }
+    60%{ transform:translateX(-5px); } 80%{ transform:translateX(4px); }
+  }
+  .fx-shake{ animation:fx-shake .38s ease; }
+  @keyframes fx-portrait-hit{
+    0%{ filter:brightness(1); transform:scale(1); }
+    30%{ filter:brightness(1.9) saturate(1.4); transform:scale(1.08); }
+    100%{ filter:brightness(1); transform:scale(1); }
+  }
+  .fx-hit .combat-portrait{ animation:fx-portrait-hit .4s ease; }
 
   /* ===================== 結局畫面 ===================== */
   #screen-end{display:flex;flex-direction:column;gap:22px;padding:20px 4px 40px;}
@@ -312,7 +384,11 @@
   .end-actions{display:flex;justify-content:center;margin-top:6px;}
 
   @media (prefers-reduced-motion: reduce){
-    .btn-primary,.pick-card,.map-dot{transition:none;}
+    .btn-primary,.pick-card,.map-dot,.combat-hp-fill{transition:none;}
+    .map-node.is-current .map-dot{animation:none;}
+    .fx-number{animation:none;opacity:1;transform:translate(-50%,-16px);}
+    .fx-shake{animation:none;}
+    .fx-hit .combat-portrait{animation:none;}
   }
   a{color:var(--vermillion);}
 </style>
@@ -487,7 +563,7 @@ const FINALE = {
 /* ===================== 天下地圖（水平軸） ===================== */
 /* 座標為 0-100 的相對百分比。gate 為所需 stageIdx（達到該境界才可進入）。 */
 const MAP_NODES = [
-  { id:"zhuang", name:"莊國·楓林鎮", x:20, y:66, gate:null,
+  { id:"zhuang", name:"莊國·楓林鎮", x:20, y:66, gate:null, glyph:"鎮",
     events:[
       { title:"藥鋪裡的抉擇",
         text:"你在藥鋪學徒時，一名遊方道人塞給你一枚來歷不明的「開脈丹」，聲稱能助你早日開脈，卻要你替他跑一趟辨不清底細的差事。",
@@ -511,7 +587,7 @@ const MAP_NODES = [
           {label:"提出對等交換而非依附", cn:"人脈", result:"你提出以勞力換資材、不簽賣身契的條件，那家人略感意外，倒也應了下來，彼此留了分寸。", effects:{ren:2,daoyuan:6}}
         ]}
     ]},
-  { id:"jing", name:"景國·天京", x:50, y:52, gate:null,
+  { id:"jing", name:"景國·天京", x:50, y:52, gate:null, glyph:"京",
     events:[
       { title:"招攬的手",
         text:"一名自稱代表某方勢力的人找上門，語氣客氣卻帶著審視，想知道你日後是願入朝為官、闖蕩江湖，還是一心求道。",
@@ -535,7 +611,7 @@ const MAP_NODES = [
           {label:"婉拒赴會，潛心閉關", cn:"機緣", result:"你選擇不去湊這場熱鬧，把時間都用在了自己的道途上，錯過了揚名的機會，卻也躲開了場中的明爭暗鬥。", effects:{ji:1,daoyuan:10}}
         ]}
     ]},
-  { id:"qi", name:"齊國·臨淄", x:80, y:40, gate:null,
+  { id:"qi", name:"齊國·臨淄", x:80, y:40, gate:null, glyph:"臨",
     events:[
       { title:"開脈丹的黑市",
         text:"你無意間撞見一樁私下交易——有人在低價兜售來路不明的開脈丹，買方多是付不起正價的寒門子弟。",
@@ -559,7 +635,7 @@ const MAP_NODES = [
           {label:"以修行繁忙為由婉拒", cn:"機緣", result:"你婉拒了他的求見，專心自己的修行。他失望地離開，你心裡掠過一絲說不清的滋味。", effects:{ji:1,chixin:-8}}
         ]}
     ]},
-  { id:"chu", name:"楚國·郢都", x:56, y:82, gate:null,
+  { id:"chu", name:"楚國·郢都", x:56, y:82, gate:null, glyph:"郢",
     events:[
       { title:"同門的私怨",
         text:"同宗門中兩名師兄弟因一件功勞歸屬鬧得不可開交，都想拉你評理站隊。",
@@ -583,7 +659,7 @@ const MAP_NODES = [
           {label:"勸他自首，願陪他一同承擔", cn:"赤心", result:"你沒有替他掩蓋，也沒有落井下石，而是陪著他一同去面對——這份不逃避的擔當，讓你們的情誼反而更深了一層。", effects:{chixin:14,ren:2,miao:4}}
         ]}
     ]},
-  { id:"qin", name:"秦國·邊郡", x:16, y:40, gate:null,
+  { id:"qin", name:"秦國·邊郡", x:16, y:40, gate:null, glyph:"秦",
     events:[
       { title:"邊疆的征召",
         text:"長城傳來邊防吃緊的消息，一紙征召文書送到你手中，邀你隨軍歷練——這既是苦差，也是履歷。",
@@ -607,7 +683,7 @@ const MAP_NODES = [
           {label:"視若無睹，專心趕路", cn:"機緣", result:"你把心一橫，只當沒看見。這世道從不缺可憐人，你若事事動心，早晚被拖垮。", effects:{chixin:-8,ji:1}}
         ]}
     ]},
-  { id:"jingzhou", name:"荊國·計都", x:62, y:14, gate:null,
+  { id:"jingzhou", name:"荊國·計都", x:62, y:14, gate:null, glyph:"荊",
     events:[
       { title:"夜讀",
         text:"入夜後，你就著油燈翻閱手邊唯一的一卷典籍，字裡行間似有若無地印證著你所信奉的道途。",
@@ -631,7 +707,7 @@ const MAP_NODES = [
           {label:"以問道求真為己任", cn:"道統", result:"你選定了潛心問道的道途，此後行事，多了幾分沉靜內斂的定力。", effects:{daotong:16,daoyuan:10}}
         ]}
     ]},
-  { id:"mu", name:"牧國·神都", x:36, y:16, gate:null,
+  { id:"mu", name:"牧國·神都", x:36, y:16, gate:null, glyph:"牧",
     events:[
       { title:"白骨道的試探",
         text:"一名行蹤詭秘之人在你耳邊低語，說白骨道教義「死亡是唯一的公平」自有其道理，邀你聽一場秘密的講經。",
@@ -655,7 +731,7 @@ const MAP_NODES = [
           {label:"暫且封存，來日再議", cn:"根骨", result:"你選擇先把秘藏封存，穩住根基要緊，這份謹慎讓你錯失了機緣，卻也避開了未知的風險。", effects:{gu:1,chixin:2}}
         ]}
     ]},
-  { id:"taixu", name:"太虛幻境·角樓", x:50, y:30, gate:null, special:true,
+  { id:"taixu", name:"太虛幻境·角樓", x:50, y:30, gate:null, special:true, glyph:"虛",
     events:[
       { title:"太虛幻境初體驗",
         text:"你第一次踏入太虛幻境的論劍台，對手是個看似普通卻招式老辣的游脈修士，圍觀者不少。",
@@ -686,7 +762,7 @@ const MAP_NODES = [
           {label:"婉拒要職，但願效犬馬之勞", cn:"人脈", result:"你婉拒了正式的職位，卻表明願以自由之身相助，這份靈活的姿態，讓你既保有自主，也不失情分。", effects:{ren:2,daotong:4}}
         ]}
     ]},
-  { id:"bianhuang", name:"邊荒", x:50, y:5, gate:4,
+  { id:"bianhuang", name:"邊荒", x:50, y:5, gate:4, glyph:"荒",
     events:[
       { title:"邊荒的前哨",
         text:"邊荒魔潮再度活躍的傳聞甚囂塵上，太虛閣召集騰龍境以上的修士組成前哨隊伍，先行探查。",
@@ -710,7 +786,7 @@ const MAP_NODES = [
           {label:"留下藥物，轉身離開", cn:"機緣", result:"你沒有殺牠，也沒多做糾纏，只留下些許藥材便轉身離去——這份分寸，你拿捏得剛好。", effects:{ji:1,chixin:4}}
         ]}
     ]},
-  { id:"yunxianlin", name:"隕仙林", x:56, y:96, gate:5,
+  { id:"yunxianlin", name:"隕仙林", x:56, y:96, gate:5, glyph:"隕",
     events:[
       { title:"秘境的機緣",
         text:"你聽聞隕仙林邊緣一處小型秘境近日開啟，傳言其中藏有前人遺留的道術殘篇，只是入口地形凶險，已有修士折損其中。",
@@ -1118,10 +1194,38 @@ function renderMap(){
   wrap.appendChild(charBtn);
 }
 
+const MAP_REGION_LABELS = [
+  {name:"中域", x:40, y:60}, {name:"東域", x:88, y:58}, {name:"南域", x:78, y:88},
+  {name:"西域", x:9, y:26}, {name:"北域", x:78, y:6}
+];
+
 function buildMapElement(){
   const ns = "http://www.w3.org/2000/svg";
   const container = document.createElement("div");
   container.className = "map-wrap";
+
+  const title = document.createElement("div");
+  title.className = "map-frame-title";
+  title.textContent = "天下輿圖";
+  container.appendChild(title);
+
+  const compass = document.createElement("div");
+  compass.className = "map-compass";
+  compass.innerHTML = `<svg viewBox="0 0 26 26" width="26" height="26">
+    <circle cx="13" cy="13" r="11" fill="none" stroke="var(--ink-soft)" stroke-width="1"/>
+    <path d="M13 3 L13 23 M3 13 L23 13" stroke="var(--ink-soft)" stroke-width="1"/>
+    <path d="M13 3 L15.5 11 L13 9 L10.5 11 Z" fill="var(--vermillion)"/>
+  </svg>`;
+  container.appendChild(compass);
+
+  MAP_REGION_LABELS.forEach(r=>{
+    const el = document.createElement("div");
+    el.className = "map-region-label";
+    el.style.left = r.x + "%"; el.style.top = r.y + "%";
+    el.style.fontSize = "22px";
+    el.textContent = r.name;
+    container.appendChild(el);
+  });
 
   const svg = document.createElementNS(ns, "svg");
   svg.setAttribute("class", "map-lines");
@@ -1130,11 +1234,14 @@ function buildMapElement(){
   MAP_EDGES.forEach(([a,b])=>{
     const na = MAP_NODES.find(n=>n.id===a), nb = MAP_NODES.find(n=>n.id===b);
     if(!na || !nb) return;
-    const line = document.createElementNS(ns, "line");
-    line.setAttribute("x1", na.x); line.setAttribute("y1", na.y);
-    line.setAttribute("x2", nb.x); line.setAttribute("y2", nb.y);
-    line.setAttribute("class", "map-edge");
-    svg.appendChild(line);
+    const mx = (na.x+nb.x)/2, my = (na.y+nb.y)/2;
+    const dx = nb.x-na.x, dy = nb.y-na.y;
+    const cx = mx - dy*0.06, cy = my + dx*0.06;
+    const path = document.createElementNS(ns, "path");
+    path.setAttribute("d", `M ${na.x} ${na.y} Q ${cx} ${cy} ${nb.x} ${nb.y}`);
+    path.setAttribute("class", "map-edge");
+    path.setAttribute("vector-effect", "non-scaling-stroke");
+    svg.appendChild(path);
   });
   container.appendChild(svg);
 
@@ -1149,7 +1256,7 @@ function buildMapElement(){
     btn.style.left = n.x + "%";
     btn.style.top = n.y + "%";
     const gateLabel = locked ? `<span class="map-gate">${CULT_STAGES[n.gate].rank}${CULT_STAGES[n.gate].name}以上</span>` : "";
-    btn.innerHTML = `<span class="map-dot"></span><span class="map-name">${n.name}</span>${gateLabel}`;
+    btn.innerHTML = `<span class="map-dot"><span>${locked?"?":n.glyph}</span></span><span class="map-name">${n.name}</span>${gateLabel}`;
     if(!locked && !isCurrent){
       btn.addEventListener("click", ()=> travelTo(n.id));
     } else {
@@ -1357,8 +1464,8 @@ function combatLog(msg){
   if(combat.log.length > 6) combat.log.shift();
 }
 
-function renderCombat(){
-  const stat = combatStats();
+function renderCombat(opts){
+  opts = opts || {};
   document.getElementById("story-card").classList.remove("trial-card");
   document.getElementById("result-box").classList.add("hide");
   document.getElementById("story-stage").textContent = combat.node.name;
@@ -1370,13 +1477,23 @@ function renderCombat(){
   const enemyPct = Math.max(0, combat.enemy.hpCur / combat.enemy.hp * 100);
   const playerPct = Math.max(0, combat.hpCur / combat.hpMax * 100);
   vs.innerHTML = `
-    <div class="combat-side">
-      <div class="combat-name"><span class="who">${combat.enemy.name}</span><span>${Math.max(0,combat.enemy.hpCur)} / ${combat.enemy.hp}</span></div>
-      <div class="combat-hp-track"><div class="combat-hp-fill enemy" style="width:${enemyPct}%"></div></div>
+    <div class="combat-side enemy">
+      <div class="combat-head">
+        <div class="combat-portrait">${combat.enemy.name[0]}</div>
+        <div class="combat-bars">
+          <div class="combat-name"><span class="who">${combat.enemy.name}</span><span>${Math.max(0,combat.enemy.hpCur)} / ${combat.enemy.hp}</span></div>
+          <div class="combat-hp-track"><div class="combat-hp-fill enemy" style="width:${enemyPct}%"></div></div>
+        </div>
+      </div>
     </div>
-    <div class="combat-side">
-      <div class="combat-name"><span class="who">你</span><span>${Math.max(0,combat.hpCur)} / ${combat.hpMax}　道元 ${state.daoyuan}</span></div>
-      <div class="combat-hp-track"><div class="combat-hp-fill" style="width:${playerPct}%"></div></div>
+    <div class="combat-side player">
+      <div class="combat-head">
+        <div class="combat-portrait">我</div>
+        <div class="combat-bars">
+          <div class="combat-name"><span class="who">你</span><span>${Math.max(0,combat.hpCur)} / ${combat.hpMax}　道元 ${state.daoyuan}</span></div>
+          <div class="combat-hp-track"><div class="combat-hp-fill" style="width:${playerPct}%"></div></div>
+        </div>
+      </div>
     </div>`;
   document.getElementById("story-text").innerHTML = "";
   document.getElementById("story-text").appendChild(vs);
@@ -1388,26 +1505,48 @@ function renderCombat(){
 
   const wrap = document.getElementById("story-choices");
   wrap.innerHTML = "";
-  const actions = document.createElement("div");
-  actions.className = "combat-actions";
+  if(opts.waiting){
+    const w = document.createElement("div");
+    w.className = "combat-waiting";
+    w.textContent = "回合結算中……";
+    wrap.appendChild(w);
+  } else {
+    const actions = document.createElement("div");
+    actions.className = "combat-actions";
 
-  const atkBtn = document.createElement("button");
-  atkBtn.className = "choice-btn"; atkBtn.textContent = "〔攻擊〕基礎一擊";
-  atkBtn.addEventListener("click", ()=> playerCombatAction({type:"attack", power:1}));
-  actions.appendChild(atkBtn);
+    const atkBtn = document.createElement("button");
+    atkBtn.className = "choice-btn"; atkBtn.textContent = "〔攻擊〕基礎一擊";
+    atkBtn.addEventListener("click", ()=> playerCombatAction({type:"attack", power:1}));
+    actions.appendChild(atkBtn);
 
-  const skillBtn = document.createElement("button");
-  skillBtn.className = "choice-btn"; skillBtn.textContent = "〔技能〕施展所學";
-  skillBtn.addEventListener("click", renderSkillMenu);
-  actions.appendChild(skillBtn);
+    const skillBtn = document.createElement("button");
+    skillBtn.className = "choice-btn"; skillBtn.textContent = "〔技能〕施展所學";
+    skillBtn.addEventListener("click", renderSkillMenu);
+    actions.appendChild(skillBtn);
 
-  const fleeBtn = document.createElement("button");
-  fleeBtn.className = "choice-btn"; fleeBtn.textContent = "〔逃跑〕脫身而去";
-  fleeBtn.addEventListener("click", attemptFlee);
-  actions.appendChild(fleeBtn);
+    const fleeBtn = document.createElement("button");
+    fleeBtn.className = "choice-btn"; fleeBtn.textContent = "〔逃跑〕脫身而去";
+    fleeBtn.addEventListener("click", attemptFlee);
+    actions.appendChild(fleeBtn);
 
-  wrap.appendChild(actions);
+    wrap.appendChild(actions);
+  }
   renderSidebar();
+  if(opts.fx) runCombatFx(opts.fx);
+}
+
+function runCombatFx(fx){
+  const sideEl = document.querySelector(`.combat-side.${fx.side}`);
+  if(!sideEl) return;
+  const num = document.createElement("span");
+  num.className = "fx-number " + fx.kind;
+  num.textContent = fx.kind==="heal" ? `+${fx.amount}` : fx.kind==="dodge" ? "未中" : `-${fx.amount}`;
+  sideEl.appendChild(num);
+  setTimeout(()=>{ num.remove(); }, 900);
+  if(fx.kind==="dmg" || fx.kind==="crit"){
+    sideEl.classList.add("fx-shake","fx-hit");
+    setTimeout(()=> sideEl.classList.remove("fx-shake","fx-hit"), 420);
+  }
 }
 
 function renderSkillMenu(){
@@ -1451,15 +1590,18 @@ function rollDamage(atk, def, critChance){
 function playerCombatAction(action){
   const stat = combatStats();
   const e = combat.enemy;
+  let fx = null;
   if(action.type === "attack"){
     const eDef = e.def * combat.enemyDebuff.defMult;
     const {dmg, isCrit} = rollDamage(stat.atk * action.power * combat.playerBuff.atkMult, eDef, stat.crit);
     e.hpCur -= dmg;
     combatLog(`你${action.name?`施展【${action.name}】`:"揮擊"}，造成 ${dmg} 點傷害${isCrit?"（會心一擊！）":""}。`);
+    fx = {side:"enemy", kind: isCrit?"crit":"dmg", amount:dmg};
   } else if(action.type === "heal"){
     const heal = Math.round(action.power);
     combat.hpCur = Math.min(combat.hpMax, combat.hpCur + heal);
     combatLog(`你施展【${action.name}】，回復 ${heal} 點氣血。`);
+    fx = {side:"player", kind:"heal", amount:heal};
   } else if(action.type === "buff"){
     const base = {atkMult:1, defMult:1, spdMult:1, rounds:2};
     base[action.stat+"Mult"] = 1 + action.power;
@@ -1472,8 +1614,9 @@ function playerCombatAction(action){
     combatLog(`你施展【${action.name}】，敵方${action.stat==="def"?"守勢":action.stat==="spd"?"身法":"氣勢"}受挫。`);
   }
   renderSidebar();
-  if(e.hpCur <= 0){ combatVictory(); return; }
-  enemyTurn();
+  renderCombat({waiting:true, fx});
+  if(e.hpCur <= 0){ setTimeout(combatVictory, 700); return; }
+  setTimeout(enemyTurn, 700);
 }
 
 function enemyTurn(){
@@ -1481,18 +1624,26 @@ function enemyTurn(){
   const e = combat.enemy;
   const effEnemySpd = e.spd * combat.enemyDebuff.spdMult;
   const dodgeChance = Math.max(3, Math.min(30, (stat.spd*combat.playerBuff.spdMult - effEnemySpd)*1.5 + 6));
+  let fx;
   if(Math.random()*100 < dodgeChance){
     combatLog(`${e.name}出手，你身法一閃，堪堪避開。`);
+    fx = {side:"player", kind:"dodge"};
   } else {
     const pDef = stat.def * combat.playerBuff.defMult;
     const {dmg} = rollDamage(e.atk * combat.enemyDebuff.atkMult, pDef, 5);
     combat.hpCur -= dmg;
     combatLog(`${e.name}反擊，你受到 ${dmg} 點傷害。`);
+    fx = {side:"player", kind:"dmg", amount:dmg};
   }
   if(combat.playerBuff.rounds>0){ combat.playerBuff.rounds--; if(combat.playerBuff.rounds<=0) combat.playerBuff={atkMult:1,defMult:1,spdMult:1,rounds:0}; }
   if(combat.enemyDebuff.rounds>0){ combat.enemyDebuff.rounds--; if(combat.enemyDebuff.rounds<=0) combat.enemyDebuff={atkMult:1,defMult:1,spdMult:1,rounds:0}; }
-  if(combat.hpCur <= 0){ combatDefeat(); return; }
-  renderCombat();
+  renderSidebar();
+  if(combat.hpCur <= 0){
+    renderCombat({waiting:true, fx});
+    setTimeout(combatDefeat, 700);
+    return;
+  }
+  renderCombat({fx});
 }
 
 function attemptFlee(){
@@ -1503,7 +1654,8 @@ function attemptFlee(){
     endCombat({fled:true});
   } else {
     combatLog(`你想脫身，卻被${combat.enemy.name}纏住，未能走脫！`);
-    enemyTurn();
+    renderCombat({waiting:true});
+    setTimeout(enemyTurn, 500);
   }
 }
 
