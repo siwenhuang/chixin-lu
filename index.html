@@ -334,23 +334,22 @@
   .item-row .bonus{color:var(--muted);font-size:11.5px;}
 
   /* ---------- 戰鬥 ---------- */
-  .combat-vs{display:flex;flex-direction:column;gap:18px;margin-bottom:6px;}
-  .combat-side{position:relative;display:flex;flex-direction:column;gap:4px;}
-  .combat-portrait{
-    width:52px;height:52px;border-radius:50%;flex:none;
-    display:flex;align-items:center;justify-content:center;
-    font-family:var(--font-serif);font-weight:700;font-size:20px;
-    background:var(--paper-raised);border:2px solid var(--line);color:var(--ink-soft);
+  .combat-arena{display:flex;align-items:center;justify-content:center;gap:14px;margin-bottom:14px;}
+  .combat-side{position:relative;display:flex;flex-direction:column;align-items:center;gap:6px;flex:1;max-width:190px;}
+  .combat-figure-box{width:118px;height:158px;flex:none;}
+  .combat-figure-svg{width:100%;height:100%;overflow:visible;}
+  .vs-mark{
+    flex:none;font-family:var(--font-serif);font-weight:700;font-size:15px;color:var(--muted);
+    border:1px solid var(--line);border-radius:50%;width:34px;height:34px;
+    display:flex;align-items:center;justify-content:center;opacity:.7;
   }
-  .combat-side.enemy .combat-portrait{border-color:var(--evil);color:var(--evil);}
-  .combat-side.player .combat-portrait{border-color:var(--vermillion);color:var(--vermillion);}
-  .combat-head{display:flex;align-items:center;gap:12px;}
-  .combat-bars{flex:1;display:flex;flex-direction:column;gap:4px;}
-  .combat-name{display:flex;justify-content:space-between;font-family:var(--font-sans);font-size:13px;}
-  .combat-name .who{font-weight:700;}
-  .combat-hp-track{height:10px;border-radius:5px;background:var(--paper-deep);overflow:hidden;}
+  .combat-name{font-family:var(--font-sans);font-size:13px;font-weight:700;text-align:center;}
+  .combat-side.enemy .combat-name{color:var(--evil);}
+  .combat-side.player .combat-name{color:var(--vermillion);}
+  .combat-hp-track{width:100%;height:9px;border-radius:5px;background:var(--paper-deep);overflow:hidden;}
   .combat-hp-fill{height:100%;border-radius:5px;background:var(--vermillion);transition:width .5s cubic-bezier(.2,.8,.3,1);}
   .combat-hp-fill.enemy{background:var(--evil);}
+  .combat-hp-text{font-family:var(--font-sans);font-size:11px;color:var(--muted);text-align:center;font-variant-numeric:tabular-nums;}
   .combat-log{
     background:var(--paper);border:1px dashed var(--line);border-radius:4px;
     padding:10px 14px;font-family:var(--font-sans);font-size:12.5px;color:var(--ink-soft);
@@ -402,11 +401,11 @@
   }
   .fx-shake{ animation:fx-shake .38s ease; }
   @keyframes fx-portrait-hit{
-    0%{ filter:brightness(1); transform:scale(1); }
-    30%{ filter:brightness(1.9) saturate(1.4); transform:scale(1.08); }
-    100%{ filter:brightness(1); transform:scale(1); }
+    0%{ filter:brightness(1) saturate(1); }
+    30%{ filter:brightness(1.9) saturate(1.5); }
+    100%{ filter:brightness(1) saturate(1); }
   }
-  .fx-hit .combat-portrait{ animation:fx-portrait-hit .4s ease; }
+  .fx-hit .combat-figure-svg{ animation:fx-portrait-hit .4s ease; }
 
   /* ===================== 結局畫面 ===================== */
   #screen-end{display:flex;flex-direction:column;gap:22px;padding:20px 4px 40px;}
@@ -424,7 +423,7 @@
     .map-node.is-current .map-dot{animation:none;}
     .fx-number{animation:none;opacity:1;transform:translate(-50%,-16px);}
     .fx-shake{animation:none;}
-    .fx-hit .combat-portrait{animation:none;}
+    .fx-hit .combat-figure-svg{animation:none;}
   }
   a{color:var(--vermillion);}
 </style>
@@ -1062,14 +1061,14 @@ function unlockedSkills(){
 }
 
 const NORMAL_ENEMIES = [
-  {id:"bandit", name:"剪徑毛賊", hp:40, atk:8, def:2, spd:5, daoyuan:[8,15], itemChance:.25, itemPool:["w1","a1","ac1"], flavor:"一夥剪徑的毛賊擋住了去路，看樣子只求財，不見得真想拚命。"},
-  {id:"wolves", name:"野狼群", hp:50, atk:10, def:3, spd:7, daoyuan:[10,18], itemChance:.22, itemPool:["w1","a1","ac1"], flavor:"一群餓狼從林間竄出，眼中閃著綠光。"},
-  {id:"rogue", name:"宵小術士", hp:45, atk:9, def:4, spd:6, daoyuan:[10,20], itemChance:.28, itemPool:["w2","a2","ac2"], flavor:"一名散修見財起意，仗著幾分道術便想圖謀不軌。"}
+  {id:"bandit", name:"剪徑毛賊", hp:40, atk:8, def:2, spd:5, daoyuan:[8,15], itemChance:.25, itemPool:["w1","a1","ac1"], flavor:"一夥剪徑的毛賊擋住了去路，看樣子只求財，不見得真想拚命。", color:"var(--muted)"},
+  {id:"wolves", name:"野狼群", hp:50, atk:10, def:3, spd:7, daoyuan:[10,18], itemChance:.22, itemPool:["w1","a1","ac1"], flavor:"一群餓狼從林間竄出，眼中閃著綠光。", color:"var(--ink-soft)"},
+  {id:"rogue", name:"宵小術士", hp:45, atk:9, def:4, spd:6, daoyuan:[10,20], itemChance:.28, itemPool:["w2","a2","ac2"], flavor:"一名散修見財起意，仗著幾分道術便想圖謀不軌。", color:"var(--indigo-soft)"}
 ];
 const ELITE_ENEMIES = [
-  {id:"demon", name:"邊荒游魔", hp:90, atk:16, def:7, spd:8, daoyuan:[25,40], itemChance:.4, itemPool:["w2","a2","ac2","w3","w4"], flavor:"一頭邊荒游魔自陰霾中撲出，周身縈繞著不祥的氣息。"},
-  {id:"guardian", name:"石像守衛", hp:110, atk:14, def:12, spd:4, daoyuan:[30,45], itemChance:.45, itemPool:["a3","w3","ac3","a4"], flavor:"一尊沉睡的仙宮石像守衛甦醒，緩慢卻不容小覷。"},
-  {id:"ashura", name:"修羅武士", hp:85, atk:19, def:6, spd:9, daoyuan:[28,42], itemChance:.42, itemPool:["w3","ac3","a3","ac4"], flavor:"一名修羅武士獨自遊蕩至此，見人便是嗜殺的目光。"}
+  {id:"demon", name:"邊荒游魔", hp:90, atk:16, def:7, spd:8, daoyuan:[25,40], itemChance:.4, itemPool:["w2","a2","ac2","w3","w4"], flavor:"一頭邊荒游魔自陰霾中撲出，周身縈繞著不祥的氣息。", color:"var(--evil)", aura:true},
+  {id:"guardian", name:"石像守衛", hp:110, atk:14, def:12, spd:4, daoyuan:[30,45], itemChance:.45, itemPool:["a3","w3","ac3","a4"], flavor:"一尊沉睡的仙宮石像守衛甦醒，緩慢卻不容小覷。", color:"var(--muted)", aura:true},
+  {id:"ashura", name:"修羅武士", hp:85, atk:19, def:6, spd:9, daoyuan:[28,42], itemChance:.42, itemPool:["w3","ac3","a3","ac4"], flavor:"一名修羅武士獨自遊蕩至此，見人便是嗜殺的目光。", color:"var(--vermillion)", aura:true}
 ];
 
 /* ===================== 太虛卷軸（懸賞任務） ===================== */
@@ -1891,6 +1890,31 @@ function combatLog(msg){
   if(combat.log.length > 6) combat.log.shift();
 }
 
+/* 依裝備 / 敵人設定畫出對戰雙方的水墨剪影小人，武器防具飾品皆依實際穿戴呈現 */
+function figureSvgMarkup(o){
+  const mirrorStyle = o.mirrored ? ' style="transform:scaleX(-1)"' : '';
+  const weapon = o.weaponOn
+    ? `<path d="M74 60 L94 38" stroke="${o.weaponColor}" stroke-width="4" stroke-linecap="round"/><circle cx="94" cy="38" r="3.5" fill="${o.weaponColor}"/>`
+    : `<path d="M74 60 L86 72" stroke="var(--ink-soft)" stroke-width="2" stroke-linecap="round" opacity=".5"/>`;
+  const accessory = o.accessoryOn
+    ? `<circle cx="50" cy="45" r="4.5" fill="${o.accessoryColor}" stroke="var(--paper)" stroke-width="1.2"/>`
+    : '';
+  const aura = o.aura
+    ? `<ellipse cx="50" cy="88" rx="44" ry="58" fill="none" stroke="${o.torsoColor}" stroke-width="2.5" opacity=".4"/>`
+    : '';
+  return `<svg viewBox="0 0 100 160" class="combat-figure-svg"${mirrorStyle}>
+    ${aura}
+    <circle cx="50" cy="26" r="16" style="fill:var(--paper-deep);stroke:var(--ink-soft);stroke-width:1.5;"/>
+    <path d="M32 46 Q50 38 68 46 L74 108 Q50 118 26 108 Z" style="fill:${o.torsoColor};stroke:var(--ink-soft);stroke-width:1.5;"/>
+    <path d="M32 52 L14 92" style="fill:none;stroke:var(--ink-soft);stroke-width:2;stroke-linecap:round;"/>
+    <path d="M68 52 L86 92" style="fill:none;stroke:var(--ink-soft);stroke-width:2;stroke-linecap:round;"/>
+    <path d="M38 108 L34 152" style="fill:none;stroke:var(--ink-soft);stroke-width:2;stroke-linecap:round;"/>
+    <path d="M62 108 L66 152" style="fill:none;stroke:var(--ink-soft);stroke-width:2;stroke-linecap:round;"/>
+    ${weapon}
+    ${accessory}
+  </svg>`;
+}
+
 function renderCombat(opts){
   opts = opts || {};
   document.getElementById("story-card").classList.remove("trial-card");
@@ -1903,23 +1927,38 @@ function renderCombat(opts){
   vs.className = "combat-vs";
   const enemyPct = Math.max(0, combat.enemy.hpCur / combat.enemy.hp * 100);
   const playerPct = Math.max(0, combat.hpCur / combat.hpMax * 100);
+
+  const eq = state.equipment;
+  const armorItem = eq.armor && getItem(eq.armor);
+  const weaponItem = eq.weapon && getItem(eq.weapon);
+  const accItem = eq.accessory && getItem(eq.accessory);
+  const playerFigure = figureSvgMarkup({
+    torsoColor: armorItem ? TIER_COLOR[armorItem.tier] : "var(--paper-deep)",
+    weaponOn: !!weaponItem, weaponColor: weaponItem ? TIER_COLOR[weaponItem.tier] : "var(--ink-soft)",
+    accessoryOn: !!accItem, accessoryColor: accItem ? TIER_COLOR[accItem.tier] : "var(--gold)",
+    mirrored:false, aura:false
+  });
+  const e = combat.enemy;
+  const enemyFigure = figureSvgMarkup({
+    torsoColor: e.color || "var(--muted)",
+    weaponOn: true, weaponColor: e.color || "var(--muted)",
+    accessoryOn:false, mirrored:true, aura: !!e.aura
+  });
+
   vs.innerHTML = `
-    <div class="combat-side enemy">
-      <div class="combat-head">
-        <div class="combat-portrait">${combat.enemy.name[0]}</div>
-        <div class="combat-bars">
-          <div class="combat-name"><span class="who">${combat.enemy.name}</span><span>${Math.max(0,combat.enemy.hpCur)} / ${combat.enemy.hp}</span></div>
-          <div class="combat-hp-track"><div class="combat-hp-fill enemy" style="width:${enemyPct}%"></div></div>
-        </div>
+    <div class="combat-arena">
+      <div class="combat-side enemy">
+        <div class="combat-figure-box">${enemyFigure}</div>
+        <div class="combat-name">${combat.enemy.name}</div>
+        <div class="combat-hp-track"><div class="combat-hp-fill enemy" style="width:${enemyPct}%"></div></div>
+        <div class="combat-hp-text">${Math.max(0,combat.enemy.hpCur)} / ${combat.enemy.hp}</div>
       </div>
-    </div>
-    <div class="combat-side player">
-      <div class="combat-head">
-        <div class="combat-portrait">我</div>
-        <div class="combat-bars">
-          <div class="combat-name"><span class="who">你</span><span>${Math.max(0,combat.hpCur)} / ${combat.hpMax}　道元 ${state.daoyuan}</span></div>
-          <div class="combat-hp-track"><div class="combat-hp-fill" style="width:${playerPct}%"></div></div>
-        </div>
+      <div class="vs-mark">對</div>
+      <div class="combat-side player">
+        <div class="combat-figure-box">${playerFigure}</div>
+        <div class="combat-name">你</div>
+        <div class="combat-hp-track"><div class="combat-hp-fill" style="width:${playerPct}%"></div></div>
+        <div class="combat-hp-text">${Math.max(0,combat.hpCur)} / ${combat.hpMax}　道元 ${state.daoyuan}</div>
       </div>
     </div>`;
   document.getElementById("story-text").innerHTML = "";
