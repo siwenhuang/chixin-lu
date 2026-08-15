@@ -173,6 +173,8 @@
   .sidebar{display:flex;flex-direction:column;gap:14px;position:sticky;top:16px;}
   .id-line{font-family:var(--font-sans);font-size:12px;color:var(--muted);}
   .id-line b{color:var(--ink);font-family:var(--font-serif);font-size:15px;display:block;margin-top:2px;}
+  .loc-line{font-family:var(--font-sans);font-size:12px;color:var(--muted);display:flex;justify-content:space-between;margin-top:10px;}
+  .loc-line b{color:var(--vermillion);font-weight:600;}
 
   .stage-track{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px;}
   .stage-dot{width:11px;height:11px;border-radius:50%;background:var(--paper-deep);border:1px solid var(--line);}
@@ -222,6 +224,34 @@
   .trial-card{border:1px solid var(--gold-soft);background:linear-gradient(180deg,var(--paper-raised),var(--paper));}
   .trial-chance{font-family:var(--font-sans);font-size:12.5px;color:var(--gold);margin:6px 0 16px;}
 
+  /* ---------- 地圖 ---------- */
+  .map-wrap{position:relative;width:100%;aspect-ratio:4/3;margin-top:6px;background:var(--paper);border:1px solid var(--line);border-radius:6px;overflow:hidden;}
+  .map-lines{position:absolute;inset:0;width:100%;height:100%;}
+  .map-edge{stroke:var(--line);stroke-width:.6;}
+  .map-nodes{position:absolute;inset:0;}
+  .map-node{
+    position:absolute;transform:translate(-50%,-50%);
+    display:flex;flex-direction:column;align-items:center;gap:4px;
+    background:none;border:none;padding:2px;font-family:var(--font-sans);
+  }
+  .map-dot{width:14px;height:14px;border-radius:50%;background:var(--paper-raised);border:2px solid var(--line);transition:transform .15s ease,border-color .15s ease;}
+  .map-node.is-open{cursor:pointer;}
+  .map-node.is-open .map-dot{border-color:var(--indigo-soft);}
+  .map-node.is-open:hover .map-dot{border-color:var(--vermillion);transform:scale(1.2);}
+  .map-node.is-current .map-dot{background:var(--vermillion);border-color:var(--vermillion);box-shadow:0 0 0 4px var(--vermillion-soft);}
+  .map-node.is-locked{cursor:not-allowed;opacity:.55;}
+  .map-node.is-locked .map-dot{border-style:dashed;}
+  .map-node.is-special .map-dot{border-radius:3px;transform:rotate(45deg);}
+  .map-node.is-special:hover .map-dot{transform:rotate(45deg) scale(1.2);}
+  .map-name{font-size:11px;color:var(--ink-soft);white-space:nowrap;}
+  .map-node.is-current .map-name{color:var(--vermillion);font-weight:700;}
+  .map-gate{font-size:9px;color:var(--muted);white-space:nowrap;}
+  .map-legend{display:flex;gap:16px;flex-wrap:wrap;margin-top:12px;font-family:var(--font-sans);font-size:11px;color:var(--muted);align-items:center;}
+  .map-legend span{display:inline-flex;align-items:center;gap:5px;}
+  .legend-dot{width:9px;height:9px;border-radius:50%;display:inline-block;border:2px solid var(--indigo-soft);}
+  .legend-dot.cur{background:var(--vermillion);border-color:var(--vermillion);}
+  .legend-dot.lock{border-style:dashed;border-color:var(--line);}
+
   /* ===================== 結局畫面 ===================== */
   #screen-end{display:flex;flex-direction:column;gap:22px;padding:20px 4px 40px;}
   .end-hero{text-align:center;display:flex;flex-direction:column;align-items:center;gap:10px;}
@@ -234,7 +264,7 @@
   .end-actions{display:flex;justify-content:center;margin-top:6px;}
 
   @media (prefers-reduced-motion: reduce){
-    .btn-primary,.pick-card{transition:none;}
+    .btn-primary,.pick-card,.map-dot{transition:none;}
   }
   a{color:var(--vermillion);}
 </style>
@@ -251,6 +281,7 @@
     <p class="lede">
       道曆新啟，六雄並立，超凡之世弱肉強食。<br>
       你是凡塵中一介無名之輩，將要從<b>奠基</b>踏起，一路叩問<b>九品游脈</b>至<b>三品神臨</b>的證道之途。<br>
+      這一路，你可自由遊歷六雄列國與太虛幻境，乃至以命相搏踏入邊荒、隕仙林等凶險絕地。<br>
       每一次抉擇，都會刻進你的<b>赤心</b>——是把自己當人看，也把別人當人看，還是在亂世裡活成了自己曾經厭惡的模樣。
     </p>
     <button class="btn-primary" id="btn-start">起 程</button>
@@ -265,7 +296,7 @@
     <div class="topbar"><div class="seal">赤</div><div class="titles"><h1>赤心錄</h1><span class="sub">立命 · 定基</span></div></div>
 
     <div class="create-step active" data-step="0">
-      <div class="step-head"><div class="step-eyebrow">第一步</div><h2>你出身何處？</h2><p>出身決定你最初的際遇、人脈根基，與眾人看你的眼光。</p></div>
+      <div class="step-head"><div class="step-eyebrow">第一步</div><h2>你出身何處？</h2><p>出身決定你最初的際遇、人脈根基，也是你踏上遊歷之路的起點。</p></div>
       <div class="card-grid" id="origin-grid"></div>
       <div class="step-actions"><span></span><button class="btn-primary" id="btn-step0-next" disabled>下一步</button></div>
     </div>
@@ -288,6 +319,8 @@
     <aside class="panel sidebar">
       <div>
         <div class="id-line">出身 · 道途<b id="side-id">—</b></div>
+        <div class="loc-line"><span>所在地</span><b id="side-location">—</b></div>
+        <div class="loc-line"><span>行程</span><b id="side-moves">0 / 0</b></div>
         <div class="stage-track" id="stage-track"></div>
       </div>
       <div>
@@ -370,11 +403,43 @@ const PATHS = [
   {id:"shang", name:"商家", desc:"取信於市，汲汲於利卻不失義，懂得審時度勢、待價而沽。", attr:{ji:2,ren:1}, fame:{jianghu:5,miao:5}}
 ];
 
-/* 每個事件 choices 的 effects 可用鍵：gu wu ji ren daoyuan chixin health miao jianghu daotong xie */
-const STAGES = [
-  {
-    key:"dianji", rank:"—", name:"奠基",
+/* ===================== 修行境界（垂直軸） ===================== */
+/* stageIdx: 0=奠基 1=九品游脈 2=八品周天 3=七品通天 4=六品騰龍 5=五品內府 6=四品外樓 →7=可叩神臨 */
+const CULT_STAGES = [
+  { rank:"—", name:"奠基",
     intro:"奠基是入品前的水磨階段，養氣調息、驗證開脈根基，全無超凡戰力可言，卻是往後一切的地基。心急吃不了熱豆腐，唯有沉住氣。",
+    breakthrough:{ name:"開脈：叩問脊柱大龍", text:"脊柱如人體大龍，開脈之際連通全身、匯聚而生道脈——這是每一個凡人叩問超凡之門的第一步，十人九不成，成則脫胎換骨。", attr:"gu" } },
+  { rank:"九品", name:"游脈境",
+    intro:"開脈之後，你正式列入超凡之流。沖脈以道脈調動氣血、生成道元，再以神念布列陣點——這是九品游脈境的修行日常，也是你第一次真正踏入這個弱肉強食的世道。",
+    breakthrough:{ name:"沖脈：小周天雛形", text:"道旋初成，以神念馭元、布列陣點，沖脈循環往復——你要嘗試讓道脈真靈第一次在體內真正遊躍起來。", attr:"wu" } },
+  { rank:"八品", name:"周天境",
+    intro:"通天宮內三重道旋構成「小周天」，三重小周天合為「大周天」。你的修行開始牽動更多人的目光，列國博弈的邊角，也悄悄映進了你的視野。",
+    breakthrough:{ name:"周天：三重道旋合流", text:"三重小周天循環無誤，方能合成真正的大周天——這一關考驗的不只是氣血根骨，更是心念是否純粹統一。", attr:"wu" } },
+  { rank:"七品", name:"通天境",
+    intro:"人身四海之首「脊柱海」徹底甦醒，鑿穿「天地門」這道蒙昧屏障。你已算得上一方修士，列國與宗門的目光開始真正落到你身上。",
+    breakthrough:{ name:"通天：鑿穿天地門", text:"天地門是蒙昧屏障，唯有徹底鑿穿，肉身方能真正踏入通天之境——這一步九死一生，也是脫胎換骨的分水嶺。", attr:"gu" } },
+  { rank:"六品", name:"騰龍境",
+    intro:"突破天地門後肉身可飛，五府海蒙昧之霧初清，「天地孤島」仍鎮壓其上等你破開。你的名字，開始出現在列國的暗中記檔裡。",
+    breakthrough:{ name:"騰龍：破天地孤島", text:"天地孤島鎮壓於五府海之上，唯有以己身之力破開，方能真正肉身騰空、名副其實地踏入騰龍之境。", attr:"gu" } },
+  { rank:"五品", name:"內府境",
+    intro:"古稱神通境。開發五府中的內府與秘藏，神通種子或將於此境孕育。你離神通之路只剩一步，這一步，往往決定了你未來數百年的道途上限。",
+    breakthrough:{ name:"內府：神通種子萌發", text:"五品秘藏若能徹底開發，神通種子便有機會真正成熟——這決定了你未來神通的雛形與走向。", attr:"wu" } },
+  { rank:"四品", name:"外樓境",
+    intro:"構築星穹聖樓，錨定星域、接引星光，凝成專屬於你的「道途」。你已是列國矚目的天驕人物，你選擇成為誰，將真正定義你此後的一生。",
+    breakthrough:{ name:"外樓：構築星穹聖樓", text:"星穹聖樓一旦落成，道途便就此凝定——這是你告別「外樓境」、真正叩問神臨大關的最後一步。", attr:"all" } }
+];
+const STAGE_THRESHOLD = [25,45,65,85,105,130,155];
+
+const FINALE = {
+  rank:"三品", name:"神臨境",
+  intro:"金軀玉髓，身魂得天地認可，不再受氣血衰朽所限——神臨突破時將外放「域」與「靈識」，是凡塵修士畢生所求的至高一關。列國、宗門、太虛閣，乃至你此生所有的抉擇，都將在這一刻匯聚成潮，托著你，或吞沒你。",
+  text:"你想起這一路走過的城郭與荒野、接受過你恩惠或被你辜負的人、你在廟堂江湖道統之間走出的這條路——此刻再無旁人可以代你走完最後一步。"
+};
+
+/* ===================== 天下地圖（水平軸） ===================== */
+/* 座標為 0-100 的相對百分比。gate 為所需 stageIdx（達到該境界才可進入）。 */
+const MAP_NODES = [
+  { id:"zhuang", name:"莊國·楓林鎮", x:20, y:66, gate:null,
     events:[
       { title:"藥鋪裡的抉擇",
         text:"你在藥鋪學徒時，一名遊方道人塞給你一枚來歷不明的「開脈丹」，聲稱能助你早日開脈，卻要你替他跑一趟辨不清底細的差事。",
@@ -396,24 +461,9 @@ const STAGES = [
           {label:"接受資助，先活下去再說", cn:"廟堂", result:"你接下了這份人情，資材確實讓你少走許多彎路，只是那家人的名字，此後總在你耳邊縈繞。", effects:{daoyuan:15,miao:8,chixin:-4}},
           {label:"婉拒，靠自己一步步攢", cn:"赤心", result:"你謝絕了好意，日子過得更緊巴，但夜裡睡得踏實——你不欠誰的。", effects:{chixin:8,health:-3}},
           {label:"提出對等交換而非依附", cn:"人脈", result:"你提出以勞力換資材、不簽賣身契的條件，那家人略感意外，倒也應了下來，彼此留了分寸。", effects:{ren:2,daoyuan:6}}
-        ]},
-      { title:"夜讀",
-        text:"入夜後，你就著油燈翻閱手邊唯一的一卷典籍，字裡行間似有若無地印證著你所信奉的道途。",
-        choices:[
-          {label:"逐字推敲，力求甚解", cn:"悟性", result:"你熬紅了眼，卻也把那卷典籍的道理嚼透了幾分，往後遇事，總能多想一層。", effects:{wu:2,health:-2}},
-          {label:"只取大意，早些歇息", cn:"根骨", result:"你不強求甚解，把身子養好才是根本，第二天精神奕奕，練起拳腳也格外扎實。", effects:{gu:1,health:4}},
-          {label:"抄錄一份送給同窗", cn:"人脈", result:"你多費了些工夫謄抄，換來同窗一份真心相待，日後想借書問學，總有人樂意幫忙。", effects:{ren:2}}
         ]}
-    ],
-    breakthrough:{
-      name:"開脈：叩問脊柱大龍",
-      text:"脊柱如人體大龍，開脈之際連通全身、匯聚而生道脈——這是每一個凡人叩問超凡之門的第一步，十人九不成，成則脫胎換骨。",
-      attr:"gu"
-    }
-  },
-  {
-    key:"youmai", rank:"九品", name:"游脈境",
-    intro:"開脈之後，你正式列入超凡之流。沖脈以道脈調動氣血、生成道元，再以神念布列陣點——這是九品游脈境的修行日常，也是你第一次真正踏入這個弱肉強食的世道。",
+    ]},
+  { id:"jing", name:"景國·天京", x:50, y:52, gate:null,
     events:[
       { title:"招攬的手",
         text:"一名自稱代表某方勢力的人找上門，語氣客氣卻帶著審視，想知道你日後是願入朝為官、闖蕩江湖，還是一心求道。",
@@ -422,47 +472,29 @@ const STAGES = [
           {label:"直言只想快意江湖", cn:"江湖", result:"你笑著回絕了體制內的邀約，說自己志不在此。那人倒也不惱，反倒多敬你三分血性。", effects:{jianghu:12}},
           {label:"表明一心求道，無意站隊", cn:"道統", result:"你說自己修行尚淺，不敢奢談站隊，只想先把根基打牢。對方聞言若有所思，留下一句「你倒是明白」。", effects:{daotong:12}}
         ]},
+      { title:"六雄博弈",
+        text:"你被牽連進一場六雄之間的外交風波——一方想拉攏你為己所用，另一方則暗中施壓要你保持中立。",
+        choices:[
+          {label:"明確表態，選邊而立", cn:"廟堂", result:"你權衡利弊後選定了一方，換來了實實在在的資源與地位，但也徹底站到了另一方的對立面。", effects:{miao:15,daoyuan:15,jianghu:-6}},
+          {label:"堅持中立，兩不相幫", cn:"道統", result:"你婉拒了雙方的拉攏，只求問心無愧地走自己的路。雙方雖都有些不快，卻也因此高看你幾分風骨。", effects:{daotong:12,chixin:6}},
+          {label:"暗中斡旋，促成緩和", cn:"人脈", result:"你穿針引線，讓兩方的緊張稍稍緩和，雖未必徹底化解，這份手腕卻讓你在列國博弈中多了一分籌碼。", effects:{ren:2,miao:6,jianghu:6}}
+        ]},
+      { title:"黃河之會",
+        text:"一年一度的黃河之會將近，這是列國天驕同場競技、揚名天下的盛事，你也接到了參賽的請柬。",
+        choices:[
+          {label:"傾力備戰，志在奪魁", cn:"根骨", result:"你閉關苦修數月，賽場上拼盡全力，雖未能奪魁，也殺入了前列，一戰揚名。", effects:{gu:2,health:-8,jianghu:10,miao:6}},
+          {label:"以觀摩學習為主，穩紮穩打", cn:"悟性", result:"你抱著見賢思齊的心態出賽，雖名次平平，卻從高手過招中悟出不少門道。", effects:{wu:2,daoyuan:10}},
+          {label:"婉拒赴會，潛心閉關", cn:"機緣", result:"你選擇不去湊這場熱鬧，把時間都用在了自己的道途上，錯過了揚名的機會，卻也躲開了場中的明爭暗鬥。", effects:{ji:1,daoyuan:10}}
+        ]}
+    ]},
+  { id:"qi", name:"齊國·臨淄", x:80, y:40, gate:null,
+    events:[
       { title:"開脈丹的黑市",
         text:"你無意間撞見一樁私下交易——有人在低價兜售來路不明的開脈丹，買方多是付不起正價的寒門子弟。",
         choices:[
           {label:"出手揭發這樁交易", cn:"赤心", result:"你捅破了這層窗戶紙，那些劣質丹藥被沒收，雖得罪了背後的人，卻也讓幾個寒門孩子免遭其害。", effects:{chixin:10,jianghu:6,xie:-4}},
           {label:"睜一隻眼閉一隻眼", cn:"江湖", result:"你選擇不多管閒事，那筆交易照常進行。你告訴自己，這世道本就如此，管不過來。", effects:{chixin:-6,daoyuan:5}},
           {label:"私下買下丹藥銷毀", cn:"廟堂", result:"你掏光了積蓄買下那批丹藥，當場銷毀，雖肉疼，卻睡得安穩。賣家恨恨地記下了你的臉。", effects:{chixin:8,daoyuan:-10,xie:6}}
-        ]},
-      { title:"太虛幻境初體驗",
-        text:"你第一次踏入太虛幻境的論劍台，對手是個看似普通卻招式老辣的游脈修士，圍觀者不少。",
-        choices:[
-          {label:"全力搏一場勝負", cn:"根骨", result:"你拼盡氣血，堪堪險勝，論劍台上的積分讓你在同輩中小有名氣。", effects:{gu:1,daoyuan:12,health:-6}},
-          {label:"以智取巧，穩守待變", cn:"悟性", result:"你看穿對方招式的破綻，以巧破力，贏得不算漂亮，卻也贏得踏實。", effects:{wu:2,daoyuan:8}},
-          {label:"點到為止，交個朋友", cn:"人脈", result:"你半途罷手抱拳致意，對方愣了愣，隨後大笑，此後倒成了偶爾切磋的道友。", effects:{ren:2}}
-        ]},
-      { title:"同門的私怨",
-        text:"同宗門中兩名師兄弟因一件功勞歸屬鬧得不可開交，都想拉你評理站隊。",
-        choices:[
-          {label:"據理直言，不偏不倚", cn:"赤心", result:"你把是非攤開來講，雖兩邊都不算討好，卻也讓旁人高看你一分公道心。", effects:{chixin:6,ren:1}},
-          {label:"順勢站隊，交好強者", cn:"人脈", result:"你選了看起來更有前途的一方，那人事後投桃報李，給了你些許照拂。", effects:{ren:2,daoyuan:6,chixin:-3}},
-          {label:"藉口修行要緊，避而不見", cn:"機緣", result:"你託辭潛修，避開了這攤渾水，倒也因此多出時間精進，只是兩人此後看你都淡了幾分。", effects:{ji:1,daoyuan:5}}
-        ]}
-    ],
-    breakthrough:{name:"沖脈：小周天雛形", text:"道旋初成，以神念馭元、布列陣點，沖脈循環往復——你要嘗試讓道脈真靈第一次在體內真正遊躍起來。", attr:"wu"}
-  },
-  {
-    key:"zhoutian", rank:"八品", name:"周天境",
-    intro:"通天宮內三重道旋構成「小周天」，三重小周天合為「大周天」。你的修行開始牽動更多人的目光，列國博弈的邊角，也悄悄映進了你的視野。",
-    events:[
-      { title:"列國游歷",
-        text:"你隨商隊游歷數國，親眼見到開脈丹分配不均之下，尋常人家為了一線超凡的機會傾家蕩產。",
-        choices:[
-          {label:"傾力資助幾戶寒門", cn:"赤心", result:"你掏出隨身道元石換了些丹藥資助沿途人家，錢財散盡，心裡卻踏實——你沒有把自己活成看不見他人的人。", effects:{chixin:10,daoyuan:-10,jianghu:6}},
-          {label:"記下見聞，日後圖謀更大改變", cn:"悟性", result:"你把這些見聞一一記下，告訴自己這不是靠一人之力能改變的事，總有一天要站到能撬動局面的位置上。", effects:{wu:1,miao:6}},
-          {label:"視若無睹，專心趕路", cn:"機緣", result:"你把心一橫，只當沒看見。這世道從不缺可憐人，你若事事動心，早晚被拖垮。", effects:{chixin:-8,ji:1}}
-        ]},
-      { title:"同代論道",
-        text:"太虛幻境的角樓裡，一位同輩天驕主動邀你論道切磋，言談間鋒芒內斂，顯是個不容小覷的人物。",
-        choices:[
-          {label:"傾囊相授，坦誠以對", cn:"人脈", result:"你們相談甚歡，各自道途雖不同，卻惺惺相惜，日後在太虛閣的甄選中，這份交情或許用得上。", effects:{ren:2,jianghu:6}},
-          {label:"留幾分底牌，點到即止", cn:"機緣", result:"你三分真七分虛地應付過去，對方看出了你的謹慎，倒也不惱，只說「來日再會」。", effects:{ji:2}},
-          {label:"當場切磋見真章", cn:"根骨", result:"一番硬碰硬的較量下來，你雖敗猶榮，那位天驕的名字，你此後總會多留意幾分。", effects:{gu:2,health:-5,jianghu:4}}
         ]},
       { title:"世家的聯姻邀約",
         text:"一戶頗有勢力的世家看中你的資質，暗示若你願與其子女結為道侶，家族資源可任你調用。",
@@ -471,68 +503,22 @@ const STAGES = [
           {label:"坦言婉拒，情義不能將就", cn:"赤心", result:"你誠懇地回絕了，說姻緣不該是交易。那世家雖略感失望，倒也高看你這份坦蕩。", effects:{chixin:10,ren:1}},
           {label:"以修行未穩為由拖延", cn:"人脈", result:"你不把話說死，只說時機未到，兩邊都留了餘地，倒也算是圓滑的處世之道。", effects:{ren:1,ji:1}}
         ]},
-      { title:"白骨道的試探",
-        text:"一名行蹤詭秘之人在你耳邊低語，說白骨道教義「死亡是唯一的公平」自有其道理，邀你聽一場秘密的講經。",
+      { title:"寒門弟子",
+        text:"一名資質平平的寒門弟子慕名求見，希望你能指點一二，他的處境讓你想起了自己當年。",
         choices:[
-          {label:"斷然拒絕，並示警旁人", cn:"赤心", result:"你把這人趕了出去，還提醒了同門提防邪道滲透。那人臨走前只留下一句冷笑。", effects:{chixin:8,xie:-8,jianghu:4}},
-          {label:"出於好奇，暗中旁聽一次", cn:"機緣", result:"你按捺不住好奇心去聽了一場，那套說辭比你想像中更有蠱惑力，你心底掠過一絲寒意，卻也因此多知曉了一些邪道底細。", effects:{ji:2,xie:6,chixin:-4}},
-          {label:"假意應承，伺機查探底細", cn:"悟性", result:"你虛與委蛇地應了下來，暗中記下對方的行蹤與聯絡方式，這份底細，日後或許能派上用場。", effects:{wu:2,xie:4}}
+          {label:"傾力指點，甚至贈他資材", cn:"赤心", result:"你毫無保留地指點了他，還贈了些許資材。他日後未必大富大貴，但這份恩情，他記了一輩子。", effects:{chixin:12,daoyuan:-10,jianghu:8}},
+          {label:"點到為止，讓他自己領悟", cn:"悟性", result:"你只稍加點撥，把悟道的路留給他自己走。這份分寸，恰是你認為真正對他好的方式。", effects:{wu:1,chixin:4}},
+          {label:"以修行繁忙為由婉拒", cn:"機緣", result:"你婉拒了他的求見，專心自己的修行。他失望地離開，你心裡掠過一絲說不清的滋味。", effects:{ji:1,chixin:-8}}
         ]}
-    ],
-    breakthrough:{name:"周天：三重道旋合流", text:"三重小周天循環無誤，方能合成真正的大周天——這一關考驗的不只是氣血根骨，更是心念是否純粹統一。", attr:"wu"}
-  },
-  {
-    key:"tongtian", rank:"七品", name:"通天境",
-    intro:"人身四海之首「脊柱海」徹底甦醒，鑿穿「天地門」這道蒙昧屏障。你已算得上一方修士，列國與宗門的目光開始真正落到你身上。",
+    ]},
+  { id:"chu", name:"楚國·郢都", x:56, y:82, gate:null,
     events:[
-      { title:"秘境的機緣",
-        text:"你聽聞一處小型秘境近日開啟，傳言其中藏有前人遺留的道術殘篇，只是入口地形凶險，已有修士折損其中。",
+      { title:"同門的私怨",
+        text:"同宗門中兩名師兄弟因一件功勞歸屬鬧得不可開交，都想拉你評理站隊。",
         choices:[
-          {label:"隻身闖入，搏一份機緣", cn:"機緣", result:"你在秘境中九死一生，總算摸到殘篇的一角，雖不完整，卻也讓你對道術的理解更進一層。", effects:{ji:2,wu:1,health:-14,daoyuan:15}},
-          {label:"邀同道結伴同行，分潤所得", cn:"人脈", result:"你與幾名同道相約而行，彼此照應之下有驚無險，雖所得需均分，卻也結下了過命的交情。", effects:{ren:2,daoyuan:8}},
-          {label:"權衡風險，放棄此行", cn:"根骨", result:"你估量自身火候未到，終究沒有冒險。事後聽聞折損的修士名單，你慶幸自己留了分寸。", effects:{gu:1,chixin:2}}
-        ]},
-      { title:"邊疆的征召",
-        text:"北境傳來邊防吃緊的消息，一紙征召文書送到你手中，邀你隨軍歷練——這既是苦差，也是履歷。",
-        choices:[
-          {label:"應召從軍，親赴邊疆", cn:"根骨", result:"邊疆的風雪磨礪了你的筋骨與心性，你在幾場遭遇戰裡活了下來，也第一次真切感受到「守土」二字的分量。", effects:{gu:2,health:-10,jianghu:8}},
-          {label:"以修行要務婉拒", cn:"機緣", result:"你託辭潛修緊要推掉了征召，把時間留給了自己的修行，只是這份缺席，日後或許會被人記起。", effects:{ji:1,daoyuan:8}},
-          {label:"改以資材代役", cn:"廟堂", result:"你捐輸了一筆道元石代替親身應役，官府記你一份名頭，邊疆的將士則多了幾分裝備，各得其所。", effects:{miao:10,daoyuan:-12}}
-        ]},
-      { title:"太虛閣甄選",
-        text:"太虛閣派人下來甄選新一批巡察使人選，考核不僅看修為，更看你面對取捨時的分寸。",
-        choices:[
-          {label:"全力以赴，爭取入閣", cn:"悟性", result:"你在考核中全力施展，雖有幾分刻意，卻也讓考官看出了你的決心，入閣的門檻似乎近了一些。", effects:{wu:2,daotong:10}},
-          {label:"平常心應對，順其自然", cn:"赤心", result:"你不刻意迎合考官的喜好，只按本心行事。考官反倒因你這份坦然，在名冊上多寫了幾筆。", effects:{chixin:6,daotong:6}},
-          {label:"藉機結交同場競爭的對手", cn:"人脈", result:"你沒把同場的人當純粹的對手，反倒交下了幾分情誼，雖未必最出眾，卻贏得了人心。", effects:{ren:2,daotong:4}}
-        ]},
-      { title:"放下恩怨",
-        text:"你幼時結下的一樁家族恩怨，如今對方主動找上門來，語氣中帶著試探，不知是求和還是尋釁。",
-        choices:[
-          {label:"既往不咎，坦然一笑泯恩仇", cn:"赤心", result:"你選擇放下，對方顯是沒料到，一時愣住，隨後鄭重道謝。這份釋然，讓你走得更輕快了。", effects:{chixin:10,ren:1}},
-          {label:"言明底線，卻不趕盡殺絕", cn:"人脈", result:"你把話說清楚，既不糾纏舊怨，也不容對方越界，彼此算是體面地翻篇。", effects:{ren:2,chixin:2}},
-          {label:"藉機討回公道", cn:"江湖", result:"你趁勢討回了當年的公道，江湖上多了幾分你「有仇必報」的名聲，只是心裡那口氣，未必真的順了。", effects:{jianghu:10,chixin:-4}}
-        ]}
-    ],
-    breakthrough:{name:"通天：鑿穿天地門", text:"天地門是蒙昧屏障，唯有徹底鑿穿，肉身方能真正踏入通天之境——這一步九死一生,也是脫胎換骨的分水嶺。", attr:"gu"}
-  },
-  {
-    key:"tenglong", rank:"六品", name:"騰龍境",
-    intro:"突破天地門後肉身可飛，五府海蒙昧之霧初清，「天地孤島」仍鎮壓其上等你破開。你的名字，開始出現在列國的暗中記檔裡。",
-    events:[
-      { title:"黃河之會",
-        text:"一年一度的黃河之會將近，這是列國天驕同場競技、揚名天下的盛事，你也接到了參賽的請柬。",
-        choices:[
-          {label:"傾力備戰，志在奪魁", cn:"根骨", result:"你閉關苦修數月，賽場上拼盡全力，雖未能奪魁，也殺入了前列，一戰揚名。", effects:{gu:2,health:-8,jianghu:10,miao:6}},
-          {label:"以觀摩學習為主，穩紮穩打", cn:"悟性", result:"你抱著見賢思齊的心態出賽，雖名次平平，卻從高手過招中悟出不少門道。", effects:{wu:2,daoyuan:10}},
-          {label:"婉拒赴會，潛心閉關", cn:"機緣", result:"你選擇不去湊這場熱鬧，把時間都用在了自己的道途上，錯過了揚名的機會，卻也躲開了場中的明爭暗鬥。", effects:{ji:1,daoyuan:10}}
-        ]},
-      { title:"剿滅邪道分壇",
-        text:"太虛閣接到密報，某處發現無生教的秘密分壇，正在物色人手前往清剿。",
-        choices:[
-          {label:"主動請纓，親赴清剿", cn:"赤心", result:"你請命隨隊出征，一番惡戰下來剷除了那處分壇，救下了幾名被蠱惑的信眾。", effects:{chixin:10,xie:-12,health:-10,daotong:10}},
-          {label:"提供情報，不親身涉險", cn:"悟性", result:"你把此前查探到的線索交了上去，行動由旁人主導，雖少了幾分風頭，卻也穩妥。", effects:{wu:1,daotong:6}},
-          {label:"事不關己，專注自身修行", cn:"機緣", result:"你婉拒了這趟差事，把時間留給自己。分壇最終仍被剿滅，只是你的名字沒有出現在功勞簿上。", effects:{ji:1,daoyuan:8}}
+          {label:"據理直言，不偏不倚", cn:"赤心", result:"你把是非攤開來講，雖兩邊都不算討好，卻也讓旁人高看你一分公道心。", effects:{chixin:6,ren:1}},
+          {label:"順勢站隊，交好強者", cn:"人脈", result:"你選了看起來更有前途的一方，那人事後投桃報李，給了你些許照拂。", effects:{ren:2,daoyuan:6,chixin:-3}},
+          {label:"藉口修行要緊，避而不見", cn:"機緣", result:"你託辭潛修，避開了這攤渾水，倒也因此多出時間精進，只是兩人此後看你都淡了幾分。", effects:{ji:1,daoyuan:5}}
         ]},
       { title:"宗門繼承之爭",
         text:"你相熟的一處宗門因掌門突然離世，兩位長老為繼承之位爭得不可開交，都來請你居中調停。",
@@ -541,76 +527,6 @@ const STAGES = [
           {label:"促成兩人分權共治", cn:"人脈", result:"你提出折衷方案，讓兩位長老分掌內外事務，暫時息事寧人，這份手腕讓不少人記在心裡。", effects:{ren:2,miao:6}},
           {label:"婉拒介入，不趟這渾水", cn:"機緣", result:"你以「非我宗門中人，不宜置喙」為由推辭了，宗門後來自行了斷此事，你也因此少了些牽連。", effects:{ji:1}}
         ]},
-      { title:"異獸越境",
-        text:"邊境傳來急報，一頭天妖級異獸越境闖入人族村落，附近修士傷亡不小，你恰好在附近。",
-        choices:[
-          {label:"挺身迎戰，護住村落", cn:"根骨", result:"你與異獸鏖戰半日，雖渾身是傷，總算逼退了它，村落裡的百姓對你千恩萬謝。", effects:{gu:2,health:-16,jianghu:12,chixin:6}},
-          {label:"設法引開異獸，爭取撤離時間", cn:"悟性", result:"你以巧計將異獸引往荒僻處，爭取到村民撤離的時間，雖未能將其擊殺，卻也保全了大半人命。", effects:{wu:2,health:-6,jianghu:6}},
-          {label:"上報太虛閣，等候正規支援", cn:"機緣", result:"你權衡自身實力不足以正面對抗，選擇火速上報求援，雖有些村落遭了殃，支援終究趕到，控制住了損失。", effects:{ji:1,chixin:-4}}
-        ]}
-    ],
-    breakthrough:{name:"騰龍：破天地孤島", text:"天地孤島鎮壓於五府海之上，唯有以己身之力破開，方能真正肉身騰空、名副其實地踏入騰龍之境。", attr:"gu"}
-  },
-  {
-    key:"neifu", rank:"五品", name:"內府境",
-    intro:"古稱神通境。開發五府中的內府與秘藏，神通種子或將於此境孕育。你離神通之路只剩一步，這一步，往往決定了你未來數百年的道途上限。",
-    events:[
-      { title:"神通的雛形",
-        text:"閉關中，你隱隱感應到一縷神通種子的萌動，它似乎正在回應你這些年來真正在意、也真正堅持的東西。",
-        choices:[
-          {label:"順從赤誠本心去引導它", cn:"赤心", result:"你不刻意雕琢，只是誠實面對自己一路走來最看重的東西，神通的雛形似乎因此更加純粹、堅定。", effects:{chixin:10,wu:2,daotong:8}},
-          {label:"以最有效率的路數強行催發", cn:"悟性", result:"你選擇了最快的路數催發神通，種子確實提早成形，只是隱隱覺得，這份力量裡少了點什麼。", effects:{wu:2,daoyuan:15,chixin:-4}},
-          {label:"暫緩引導，先穩固根基", cn:"根骨", result:"你按捺住急切，先把根基徹底夯實，神通種子雖萌動得慢，底子卻紮實得多。", effects:{gu:2,health:6}}
-        ]},
-      { title:"六雄博弈",
-        text:"你被牽連進一場六雄之間的外交風波——一方想拉攏你為己所用，另一方則暗中施壓要你保持中立。",
-        choices:[
-          {label:"明確表態,選邊而立", cn:"廟堂", result:"你權衡利弊後選定了一方，換來了實實在在的資源與地位，但也徹底站到了另一方的對立面。", effects:{miao:15,daoyuan:15,jianghu:-6}},
-          {label:"堅持中立,兩不相幫", cn:"道統", result:"你婉拒了雙方的拉攏，只求問心無愧地走自己的路。雙方雖都有些不快，卻也因此高看你幾分風骨。", effects:{daotong:12,chixin:6}},
-          {label:"暗中斡旋,促成緩和", cn:"人脈", result:"你穿針引線，讓兩方的緊張稍稍緩和，雖未必徹底化解，這份手腕卻讓你在列國博弈中多了一分籌碼。", effects:{ren:2,miao:6,jianghu:6}}
-        ]},
-      { title:"內府秘藏",
-        text:"你的內府中隱約有一處秘藏尚未開啟，傳言貿然開啟風險極大，但收穫也可能是本命神通的關鍵一環。",
-        choices:[
-          {label:"冒險強行開啟", cn:"機緣", result:"你咬牙冒險一搏，秘藏開啟時反噬不小，你也因此差點失了心神，好在最終挺了過來，收穫遠超預期。", effects:{ji:2,daoyuan:20,health:-18},},
-          {label:"謹慎地緩緩試探", cn:"悟性", result:"你按部就班、步步為營地試探，雖耗時良久，總算安穩地開啟了秘藏一角。", effects:{wu:2,daoyuan:10,health:-4}},
-          {label:"暫且封存，來日再議", cn:"根骨", result:"你選擇先把秘藏封存，穩住根基要緊，這份謹慎讓你錯失了機緣，卻也避開了未知的風險。", effects:{gu:1,chixin:2}}
-        ]},
-      { title:"寒門弟子",
-        text:"一名資質平平的寒門弟子慕名求見，希望你能指點一二，他的處境讓你想起了自己當年。",
-        choices:[
-          {label:"傾力指點，甚至贈他資材", cn:"赤心", result:"你毫無保留地指點了他，還贈了些許資材。他日後未必大富大貴，但這份恩情，他記了一輩子。", effects:{chixin:12,daoyuan:-10,jianghu:8}},
-          {label:"點到為止，讓他自己領悟", cn:"悟性", result:"你只稍加點撥，把悟道的路留給他自己走。這份分寸，恰是你認為真正對他好的方式。", effects:{wu:1,chixin:4}},
-          {label:"以修行繁忙為由婉拒", cn:"機緣", result:"你婉拒了他的求見，專心自己的修行。他失望地離開，你心裡掠過一絲說不清的滋味。", effects:{ji:1,chixin:-8}}
-        ]}
-    ],
-    breakthrough:{name:"內府：神通種子萌發", text:"五品秘藏若能徹底開發，神通種子便有機會真正成熟——這決定了你未來神通的雛形與走向。", attr:"wu"}
-  },
-  {
-    key:"wailou", rank:"四品", name:"外樓境",
-    intro:"構築星穹聖樓，錨定星域、接引星光，凝成專屬於你的「道途」。你已是列國矚目的天驕人物，你選擇成為誰，將真正定義你此後的一生。",
-    events:[
-      { title:"道途的錨定",
-        text:"星穹聖樓即將落成，你需要在此時明確自己此後道途的核心取向——是入朝理政、行走江湖，還是潛心求道。",
-        choices:[
-          {label:"以廟堂經世為己任", cn:"廟堂", result:"你選定了經世濟民的道途，星穹聖樓的星光似乎也因此凝聚得格外沉穩厚重。", effects:{miao:18,daoyuan:12}},
-          {label:"以江湖俠義為己任", cn:"江湖", result:"你選定了行走四方、快意恩仇的道途，星光中隱隱透出一股鋒芒畢露的氣象。", effects:{jianghu:18,daoyuan:12}},
-          {label:"以問道求真為己任", cn:"道統", result:"你選定了潛心問道的道途，星光沉靜內斂，彷彿與你的心境相互印證。", effects:{daotong:18,daoyuan:12}}
-        ]},
-      { title:"邊荒的前哨",
-        text:"邊荒魔潮再度活躍的傳聞甚囂塵上，太虛閣召集外樓境以上的修士組成前哨隊伍，先行探查。",
-        choices:[
-          {label:"主動請纓，親赴前哨", cn:"根骨", result:"你隨隊深入邊荒，親眼見識了魔族的兇殘，也在數場惡戰中真正把自己的修為砥礪到了實處。", effects:{gu:2,health:-14,jianghu:10,daotong:6}},
-          {label:"負責後方統籌與情報彙整", cn:"悟性", result:"你留在後方統籌調度，把前線傳回的情報梳理得井井有條，這份運籌之功雖不顯眼，卻同樣要緊。", effects:{wu:2,miao:8}},
-          {label:"以資歷尚淺為由推辭", cn:"機緣", result:"你自認火候未足，婉拒了此行，把機會讓給了更有把握的人，也算是一種清醒的自知。", effects:{ji:1,chixin:-2}}
-        ]},
-      { title:"太虛閣的召見",
-        text:"太虛閣高層親自召見你，言談間既有考較，也似有意授你以要職——這是一份沉甸甸的信任，也是一份枷鎖。",
-        choices:[
-          {label:"欣然受命，肩負要職", cn:"道統", result:"你應下了這份重任，太虛閣的資源與人脈自此向你敞開，只是往後行事，再難只顧自己的喜惡。", effects:{daotong:16,daoyuan:15,ren:1}},
-          {label:"坦言尚需歷練，暫不受命", cn:"赤心", result:"你誠實地說出自己尚未準備好，高層聞言不怒反笑，說這份自知之明，比盲目受命更難得。", effects:{chixin:10,daotong:6}},
-          {label:"婉拒要職，但願效犬馬之勞", cn:"人脈", result:"你婉拒了正式的職位，卻表明願以自由之身相助，這份靈活的姿態，讓你既保有自主，也不失情分。", effects:{ren:2,daotong:4}}
-        ]},
       { title:"至交的抉擇",
         text:"你多年的至交捲入一樁牽連甚廣的案子，證據對他極為不利，而你恰好握有能替他脫罪、卻也可能徇私枉法的關鍵訊息。",
         choices:[
@@ -618,19 +534,195 @@ const STAGES = [
           {label:"念及情義，暗中相助", cn:"江湖", result:"你動用了那份訊息替至交開脫，他此後對你感激涕零，只是你心裡清楚，這份公道已經打了折扣。", effects:{jianghu:10,chixin:-6,ren:2}},
           {label:"勸他自首，願陪他一同承擔", cn:"赤心", result:"你沒有替他掩蓋，也沒有落井下石，而是陪著他一同去面對——這份不逃避的擔當，讓你們的情誼反而更深了一層。", effects:{chixin:14,ren:2,miao:4}}
         ]}
-    ],
-    breakthrough:{name:"外樓：構築星穹聖樓", text:"星穹聖樓一旦落成，道途便就此凝定——這是你告別「外樓境」、真正叩問神臨大關的最後一步。", attr:"all"}
-  }
+    ]},
+  { id:"qin", name:"秦國·邊郡", x:16, y:40, gate:null,
+    events:[
+      { title:"邊疆的征召",
+        text:"長城傳來邊防吃緊的消息，一紙征召文書送到你手中，邀你隨軍歷練——這既是苦差，也是履歷。",
+        choices:[
+          {label:"應召從軍，親赴邊疆", cn:"根骨", result:"邊疆的風雪磨礪了你的筋骨與心性，你在幾場遭遇戰裡活了下來，也第一次真切感受到「守土」二字的分量。", effects:{gu:2,health:-10,jianghu:8}},
+          {label:"以修行要務婉拒", cn:"機緣", result:"你託辭潛修緊要推掉了征召，把時間留給了自己的修行，只是這份缺席，日後或許會被人記起。", effects:{ji:1,daoyuan:8}},
+          {label:"改以資材代役", cn:"廟堂", result:"你捐輸了一筆道元石代替親身應役，官府記你一份名頭，邊疆的將士則多了幾分裝備，各得其所。", effects:{miao:10,daoyuan:-12}}
+        ]},
+      { title:"放下恩怨",
+        text:"你幼時結下的一樁家族恩怨，如今對方主動找上門來，語氣中帶著試探，不知是求和還是尋釁。",
+        choices:[
+          {label:"既往不咎，坦然一笑泯恩仇", cn:"赤心", result:"你選擇放下，對方顯是沒料到，一時愣住，隨後鄭重道謝。這份釋然，讓你走得更輕快了。", effects:{chixin:10,ren:1}},
+          {label:"言明底線，卻不趕盡殺絕", cn:"人脈", result:"你把話說清楚，既不糾纏舊怨，也不容對方越界，彼此算是體面地翻篇。", effects:{ren:2,chixin:2}},
+          {label:"藉機討回公道", cn:"江湖", result:"你趁勢討回了當年的公道，江湖上多了幾分你「有仇必報」的名聲，只是心裡那口氣，未必真的順了。", effects:{jianghu:10,chixin:-4}}
+        ]},
+      { title:"列國游歷",
+        text:"你隨商隊游歷數國邊塞，親眼見到開脈丹分配不均之下，尋常人家為了一線超凡的機會傾家蕩產。",
+        choices:[
+          {label:"傾力資助幾戶寒門", cn:"赤心", result:"你掏出隨身道元石換了些丹藥資助沿途人家，錢財散盡，心裡卻踏實——你沒有把自己活成看不見他人的人。", effects:{chixin:10,daoyuan:-10,jianghu:6}},
+          {label:"記下見聞，日後圖謀更大改變", cn:"悟性", result:"你把這些見聞一一記下，告訴自己這不是靠一人之力能改變的事，總有一天要站到能撬動局面的位置上。", effects:{wu:1,miao:6}},
+          {label:"視若無睹，專心趕路", cn:"機緣", result:"你把心一橫，只當沒看見。這世道從不缺可憐人，你若事事動心，早晚被拖垮。", effects:{chixin:-8,ji:1}}
+        ]}
+    ]},
+  { id:"jingzhou", name:"荊國·計都", x:62, y:14, gate:null,
+    events:[
+      { title:"夜讀",
+        text:"入夜後，你就著油燈翻閱手邊唯一的一卷典籍，字裡行間似有若無地印證著你所信奉的道途。",
+        choices:[
+          {label:"逐字推敲，力求甚解", cn:"悟性", result:"你熬紅了眼，卻也把那卷典籍的道理嚼透了幾分，往後遇事，總能多想一層。", effects:{wu:2,health:-2}},
+          {label:"只取大意，早些歇息", cn:"根骨", result:"你不強求甚解，把身子養好才是根本，第二天精神奕奕，練起拳腳也格外扎實。", effects:{gu:1,health:4}},
+          {label:"抄錄一份送給同窗", cn:"人脈", result:"你多費了些工夫謄抄，換來同窗一份真心相待，日後想借書問學，總有人樂意幫忙。", effects:{ren:2}}
+        ]},
+      { title:"剿滅邪道分壇",
+        text:"太虛閣接到密報，某處發現無生教的秘密分壇，正在物色人手前往清剿。",
+        choices:[
+          {label:"主動請纓，親赴清剿", cn:"赤心", result:"你請命隨隊出征，一番惡戰下來剷除了那處分壇，救下了幾名被蠱惑的信眾。", effects:{chixin:10,xie:-12,health:-10,daotong:10}},
+          {label:"提供情報，不親身涉險", cn:"悟性", result:"你把此前查探到的線索交了上去，行動由旁人主導，雖少了幾分風頭，卻也穩妥。", effects:{wu:1,daotong:6}},
+          {label:"事不關己，專注自身修行", cn:"機緣", result:"你婉拒了這趟差事，把時間留給自己。分壇最終仍被剿滅，只是你的名字沒有出現在功勞簿上。", effects:{ji:1,daoyuan:8}}
+        ]},
+      { title:"道途的錨定",
+        text:"軍中一位前輩問起你此後的打算——是入朝理政、行走江湖，還是潛心求道，他說越早想清楚，越少走冤枉路。",
+        choices:[
+          {label:"以廟堂經世為己任", cn:"廟堂", result:"你選定了經世濟民的道途，此後行事，多了幾分縱觀全局的氣度。", effects:{miao:16,daoyuan:10}},
+          {label:"以江湖俠義為己任", cn:"江湖", result:"你選定了行走四方、快意恩仇的道途，此後行事，多了幾分鋒芒畢露的果決。", effects:{jianghu:16,daoyuan:10}},
+          {label:"以問道求真為己任", cn:"道統", result:"你選定了潛心問道的道途，此後行事，多了幾分沉靜內斂的定力。", effects:{daotong:16,daoyuan:10}}
+        ]}
+    ]},
+  { id:"mu", name:"牧國·神都", x:36, y:16, gate:null,
+    events:[
+      { title:"白骨道的試探",
+        text:"一名行蹤詭秘之人在你耳邊低語，說白骨道教義「死亡是唯一的公平」自有其道理，邀你聽一場秘密的講經。",
+        choices:[
+          {label:"斷然拒絕，並示警旁人", cn:"赤心", result:"你把這人趕了出去，還提醒了同門提防邪道滲透。那人臨走前只留下一句冷笑。", effects:{chixin:8,xie:-8,jianghu:4}},
+          {label:"出於好奇，暗中旁聽一次", cn:"機緣", result:"你按捺不住好奇心去聽了一場，那套說辭比你想像中更有蠱惑力，你心底掠過一絲寒意，卻也因此多知曉了一些邪道底細。", effects:{ji:2,xie:6,chixin:-4}},
+          {label:"假意應承，伺機查探底細", cn:"悟性", result:"你虛與委蛇地應了下來，暗中記下對方的行蹤與聯絡方式，這份底細，日後或許能派上用場。", effects:{wu:2,xie:4}}
+        ]},
+      { title:"神通的雛形",
+        text:"閉關中，你隱隱感應到一縷神通種子的萌動，它似乎正在回應你這些年來真正在意、也真正堅持的東西。",
+        choices:[
+          {label:"順從赤誠本心去引導它", cn:"赤心", result:"你不刻意雕琢，只是誠實面對自己一路走來最看重的東西，神通的雛形似乎因此更加純粹、堅定。", effects:{chixin:10,wu:2,daotong:8}},
+          {label:"以最有效率的路數強行催發", cn:"悟性", result:"你選擇了最快的路數催發神通，種子確實提早成形，只是隱隱覺得，這份力量裡少了點什麼。", effects:{wu:2,daoyuan:15,chixin:-4}},
+          {label:"暫緩引導，先穩固根基", cn:"根骨", result:"你按捺住急切，先把根基徹底夯實，神通種子雖萌動得慢，底子卻紮實得多。", effects:{gu:2,health:6}}
+        ]},
+      { title:"內府秘藏",
+        text:"神都藏經閣中隱約有一處秘藏尚未開啟，傳言貿然開啟風險極大，但收穫也可能是本命神通的關鍵一環。",
+        choices:[
+          {label:"冒險強行開啟", cn:"機緣", result:"你咬牙冒險一搏，秘藏開啟時反噬不小，你也因此差點失了心神，好在最終挺了過來，收穫遠超預期。", effects:{ji:2,daoyuan:20,health:-18}},
+          {label:"謹慎地緩緩試探", cn:"悟性", result:"你按部就班、步步為營地試探，雖耗時良久，總算安穩地開啟了秘藏一角。", effects:{wu:2,daoyuan:10,health:-4}},
+          {label:"暫且封存，來日再議", cn:"根骨", result:"你選擇先把秘藏封存，穩住根基要緊，這份謹慎讓你錯失了機緣，卻也避開了未知的風險。", effects:{gu:1,chixin:2}}
+        ]}
+    ]},
+  { id:"taixu", name:"太虛幻境·角樓", x:50, y:30, gate:null, special:true,
+    events:[
+      { title:"太虛幻境初體驗",
+        text:"你第一次踏入太虛幻境的論劍台，對手是個看似普通卻招式老辣的游脈修士，圍觀者不少。",
+        choices:[
+          {label:"全力搏一場勝負", cn:"根骨", result:"你拼盡氣血，堪堪險勝，論劍台上的積分讓你在同輩中小有名氣。", effects:{gu:1,daoyuan:12,health:-6}},
+          {label:"以智取巧，穩守待變", cn:"悟性", result:"你看穿對方招式的破綻，以巧破力，贏得不算漂亮，卻也贏得踏實。", effects:{wu:2,daoyuan:8}},
+          {label:"點到為止，交個朋友", cn:"人脈", result:"你半途罷手抱拳致意，對方愣了愣，隨後大笑，此後倒成了偶爾切磋的道友。", effects:{ren:2}}
+        ]},
+      { title:"同代論道",
+        text:"太虛幻境的角樓裡，一位同輩天驕主動邀你論道切磋，言談間鋒芒內斂，顯是個不容小覷的人物。",
+        choices:[
+          {label:"傾囊相授，坦誠以對", cn:"人脈", result:"你們相談甚歡，各自道途雖不同，卻惺惺相惜，日後在太虛閣的甄選中，這份交情或許用得上。", effects:{ren:2,jianghu:6}},
+          {label:"留幾分底牌，點到即止", cn:"機緣", result:"你三分真七分虛地應付過去，對方看出了你的謹慎，倒也不惱，只說「來日再會」。", effects:{ji:2}},
+          {label:"當場切磋見真章", cn:"根骨", result:"一番硬碰硬的較量下來，你雖敗猶榮，那位天驕的名字，你此後總會多留意幾分。", effects:{gu:2,health:-5,jianghu:4}}
+        ]},
+      { title:"太虛閣甄選",
+        text:"太虛閣派人下來甄選新一批巡察使人選，考核不僅看修為，更看你面對取捨時的分寸。",
+        choices:[
+          {label:"全力以赴，爭取入閣", cn:"悟性", result:"你在考核中全力施展，雖有幾分刻意，卻也讓考官看出了你的決心，入閣的門檻似乎近了一些。", effects:{wu:2,daotong:10}},
+          {label:"平常心應對，順其自然", cn:"赤心", result:"你不刻意迎合考官的喜好，只按本心行事。考官反倒因你這份坦然，在名冊上多寫了幾筆。", effects:{chixin:6,daotong:6}},
+          {label:"藉機結交同場競爭的對手", cn:"人脈", result:"你沒把同場的人當純粹的對手，反倒交下了幾分情誼，雖未必最出眾，卻贏得了人心。", effects:{ren:2,daotong:4}}
+        ]},
+      { title:"太虛閣的召見",
+        text:"太虛閣高層親自召見你，言談間既有考較，也似有意授你以要職——這是一份沉甸甸的信任，也是一份枷鎖。",
+        choices:[
+          {label:"欣然受命，肩負要職", cn:"道統", result:"你應下了這份重任，太虛閣的資源與人脈自此向你敞開，只是往後行事，再難只顧自己的喜惡。", effects:{daotong:16,daoyuan:15,ren:1}},
+          {label:"坦言尚需歷練，暫不受命", cn:"赤心", result:"你誠實地說出自己尚未準備好，高層聞言不怒反笑，說這份自知之明，比盲目受命更難得。", effects:{chixin:10,daotong:6}},
+          {label:"婉拒要職，但願效犬馬之勞", cn:"人脈", result:"你婉拒了正式的職位，卻表明願以自由之身相助，這份靈活的姿態，讓你既保有自主，也不失情分。", effects:{ren:2,daotong:4}}
+        ]}
+    ]},
+  { id:"bianhuang", name:"邊荒", x:50, y:5, gate:4,
+    events:[
+      { title:"邊荒的前哨",
+        text:"邊荒魔潮再度活躍的傳聞甚囂塵上，太虛閣召集騰龍境以上的修士組成前哨隊伍，先行探查。",
+        choices:[
+          {label:"主動請纓，親赴前哨", cn:"根骨", result:"你隨隊深入邊荒，親眼見識了魔族的兇殘，也在數場惡戰中真正把自己的修為砥礪到了實處。", effects:{gu:2,health:-14,jianghu:10,daotong:6}},
+          {label:"負責後方統籌與情報彙整", cn:"悟性", result:"你留在後方統籌調度，把前線傳回的情報梳理得井井有條，這份運籌之功雖不顯眼，卻同樣要緊。", effects:{wu:2,miao:8}},
+          {label:"以資歷尚淺為由推辭", cn:"機緣", result:"你自認火候未足，婉拒了此行，把機會讓給了更有把握的人，也算是一種清醒的自知。", effects:{ji:1,chixin:-2}}
+        ]},
+      { title:"異獸越境",
+        text:"邊境傳來急報，一頭天妖級異獸越境闖入人族村落，附近修士傷亡不小，你恰好在附近。",
+        choices:[
+          {label:"挺身迎戰，護住村落", cn:"根骨", result:"你與異獸鏖戰半日，雖渾身是傷，總算逼退了它，村落裡的百姓對你千恩萬謝。", effects:{gu:2,health:-16,jianghu:12,chixin:6}},
+          {label:"設法引開異獸，爭取撤離時間", cn:"悟性", result:"你以巧計將異獸引往荒僻處，爭取到村民撤離的時間，雖未能將其擊殺，卻也保全了大半人命。", effects:{wu:2,health:-6,jianghu:6}},
+          {label:"上報太虛閣，等候正規支援", cn:"機緣", result:"你權衡自身實力不足以正面對抗，選擇火速上報求援，雖有些村落遭了殃，支援終究趕到，控制住了損失。", effects:{ji:1,chixin:-4}}
+        ]},
+      { title:"邊荒的獵物",
+        text:"巡行邊荒時，你遇上一頭身受重傷、獨自蜷伏的年輕修羅，牠既無力反抗，也不再嘶吼，只是死死盯著你。",
+        choices:[
+          {label:"手起刀落，除去後患", cn:"根骨", result:"你不留情面，斬殺了牠——邊荒從不講仁慈，這是你告訴自己的道理。", effects:{gu:1,jianghu:6,chixin:-8}},
+          {label:"查探傷勢，設法醫治", cn:"赤心", result:"你替牠處理了傷口，牠沒有攻擊你，只是眼神複雜地看著你離去。你不知這是不是一個錯誤的選擇，但你不後悔。", effects:{chixin:10,health:-6}},
+          {label:"留下藥物，轉身離開", cn:"機緣", result:"你沒有殺牠，也沒多做糾纏，只留下些許藥材便轉身離去——這份分寸，你拿捏得剛好。", effects:{ji:1,chixin:4}}
+        ]}
+    ]},
+  { id:"yunxianlin", name:"隕仙林", x:56, y:96, gate:5,
+    events:[
+      { title:"秘境的機緣",
+        text:"你聽聞隕仙林邊緣一處小型秘境近日開啟，傳言其中藏有前人遺留的道術殘篇，只是入口地形凶險，已有修士折損其中。",
+        choices:[
+          {label:"隻身闖入，搏一份機緣", cn:"機緣", result:"你在秘境中九死一生，總算摸到殘篇的一角，雖不完整，卻也讓你對道術的理解更進一層。", effects:{ji:2,wu:1,health:-14,daoyuan:15}},
+          {label:"邀同道結伴同行，分潤所得", cn:"人脈", result:"你與幾名同道相約而行，彼此照應之下有驚無險，雖所得需均分，卻也結下了過命的交情。", effects:{ren:2,daoyuan:8}},
+          {label:"權衡風險，放棄此行", cn:"根骨", result:"你估量自身火候未到，終究沒有冒險。事後聽聞折損的修士名單，你慶幸自己留了分寸。", effects:{gu:1,chixin:2}}
+        ]},
+      { title:"仙宮遺蹟",
+        text:"你在殘破的仙宮遺蹟中穿行，斷壁上刻著近古仙宮時代的術介殘文，依稀可辨，卻也隨時可能引動殘留的禁制。",
+        choices:[
+          {label:"屏息推敲術介殘文", cn:"悟性", result:"你耐著性子逐字破解，雖引動了小小反噬，卻也窺得一鱗半爪失傳已久的仙術奧義。", effects:{wu:2,daoyuan:12,health:-8}},
+          {label:"以蠻力破開封存的密室", cn:"根骨", result:"你索性硬闖，密室應聲而開，代價是結結實實挨了禁制反震，所得卻也豐厚。", effects:{gu:1,daoyuan:16,health:-12}},
+          {label:"見機不妙，及早抽身", cn:"機緣", result:"你察覺氣息不對，果斷退出，雖一無所獲，卻也保住了周全。", effects:{ji:1,chixin:2}}
+        ]},
+      { title:"亡者的低語",
+        text:"夜宿隕仙林邊緣，你聽見若有似無的低語，似是白骨道殘留的怨念，糾纏著向你訴說「死亡才是唯一公平」的教義。",
+        choices:[
+          {label:"誦念清明，不為所動", cn:"赤心", result:"你穩住心神，不為那怨念所惑，反倒因這份清明，離心魔更遠了一步。", effects:{chixin:8,xie:-6}},
+          {label:"順著低語探尋其來歷", cn:"機緣", result:"你順藤摸瓜，探得了那縷怨念的來歷，雖沾染了幾分邪氣，卻也多掌握了一份底細。", effects:{ji:1,xie:8,chixin:-4}},
+          {label:"以道術強行鎮壓", cn:"根骨", result:"你運起道術鎮壓那縷怨念，一番角力下來，怨念潰散，你也耗損不小。", effects:{gu:1,health:-10,daotong:6}}
+        ]}
+    ]}
 ];
 
-const FINALE = {
-  rank:"三品", name:"神臨境",
-  intro:"金軀玉髓，身魂得天地認可，不再受氣血衰朽所限——神臨突破時將外放「域」與「靈識」，是凡塵修士畢生所求的至高一關。列國、宗門、太虛閣，乃至你此生所有的抉擇，都將在這一刻匯聚成潮，托著你，或吞沒你。",
-  text:"你盤坐於星穹聖樓之巔，運轉周身道脈。你想起楓林鎮的藥鋪、想起那些接受過你恩惠或被你辜負的人、想起你在廟堂江湖道統之間走出的這條路——此刻再無旁人可以代你走完最後一步。"
-};
+const MAP_EDGES = [
+  ["zhuang","qin"], ["zhuang","jing"], ["qin","mu"], ["mu","jingzhou"], ["jingzhou","jing"],
+  ["jing","qi"], ["jing","chu"], ["qi","chu"], ["jingzhou","bianhuang"], ["chu","yunxianlin"]
+];
+
+const FILLER_EVENTS = [
+  { title:"小憩", text:"旅途稍歇，你在驛站簷下小坐，看著往來行人，心緒漸漸平定。",
+    choices:[
+      {label:"靜心養氣", cn:"根骨", result:"你調息片刻，氣血稍緩。", effects:{health:6}},
+      {label:"觀察市井百態", cn:"悟性", result:"你冷眼旁觀，倒也看出幾分世情冷暖。", effects:{wu:1}},
+      {label:"與路人閒談", cn:"人脈", result:"一番閒談，倒也聽得幾樁趣聞軼事。", effects:{ren:1}}
+    ]},
+  { title:"舊地重遊", text:"再次踏上這片土地，物是人非，你想起了些許往事。",
+    choices:[
+      {label:"感懷一番", cn:"赤心", result:"你由衷地感慨了一番，心緒更添幾分堅定。", effects:{chixin:4}},
+      {label:"打聽近況", cn:"機緣", result:"你順道打聽了些消息，或許日後用得上。", effects:{ji:1,daoyuan:5}},
+      {label:"不多停留，繼續趕路", cn:"根骨", result:"你沒有多做停留，養精蓄銳，繼續前路。", effects:{health:3}}
+    ]},
+  { title:"路遇同道", text:"途中偶遇一名萍水相逢的修士，彼此點頭致意，略談幾句修行心得。",
+    choices:[
+      {label:"虛心請教", cn:"悟性", result:"你虛心求教，倒也得了些許啟發。", effects:{wu:1,daoyuan:6}},
+      {label:"分享己見", cn:"人脈", result:"你坦誠分享了自己的體悟，對方頗為受用，記下了你的名字。", effects:{ren:1}},
+      {label:"點頭而過，不多攀談", cn:"機緣", result:"你只是點頭致意，沒有多做攀談，各自趕路。", effects:{ji:1}}
+    ]},
+  { title:"夜觀星象", text:"夜色清朗，你望著遠方出神，心中盤算著往後的道途。",
+    choices:[
+      {label:"推演道術", cn:"悟性", result:"你借夜色推演片刻，若有所悟。", effects:{wu:1,daoyuan:5}},
+      {label:"靜坐調息", cn:"根骨", result:"你靜坐調息，元氣稍復。", effects:{health:5}},
+      {label:"提筆記下心緒", cn:"赤心", result:"你提筆記下這一刻的心緒，往後回望，或許正是初心所在。", effects:{chixin:5}}
+    ]}
+];
 
 /* ===================== 結局模板 ===================== */
 function buildEnding(state){
+  const finalStageName = state.finalStageName || "外樓境";
   if(state.health<=0){
     return {
       sub:"早夭 · 道消身殞",
@@ -642,15 +734,14 @@ function buildEnding(state){
   const fameKeys = [["miao","廟堂"],["jianghu","江湖"],["daotong","道統"],["xie","邪道"]];
   fameKeys.sort((a,b)=>state[b[0]]-state[a[0]]);
   const dom = fameKeys[0][0];
-  const domVal = fameKeys[0][1];
-  const highChixin = state.chixin>=70, lowChixin = state.chixin<=30;
+  const highChixin = state.chixin>=70;
   const success = state.finaleSuccess;
 
   if(dom==="xie" && state.xie>=25){
     return {
       sub: success ? "神臨 · 墮入魔道" : "止步 · 墮入魔道",
       title: success ? "梟雄成道，卻已非昔日之你" : "在深淵邊緣，你選擇了留下",
-      body:`一次次在赤心與利害之間，你更多選擇了後者。邪道的暗流終究纏上了你，${success?"你以此証得神臨之境，成為列國忌憚的一方梟雄，威能赫赫，卻再無人真心與你交心。":"你雖未能突破神臨，卻也已與白骨道、無生教的暗流糾纏太深，往後餘生，怕是要活在提防與被提防之中。"}\n\n你偶爾午夜夢回，會想起楓林鎮那個尚未被世道磨去稜角的自己——只是想歸想，你已經回不去了。`
+      body:`一次次在赤心與利害之間，你更多選擇了後者。邪道的暗流終究纏上了你，${success?"你以此証得神臨之境，成為列國忌憚的一方梟雄，威能赫赫，卻再無人真心與你交心。":`你雖未能突破神臨，止步於${finalStageName}，卻也已與白骨道、無生教的暗流糾纏太深，往後餘生，怕是要活在提防與被提防之中。`}\n\n你偶爾午夜夢回，會想起楓林鎮那個尚未被世道磨去稜角的自己——只是想歸想，你已經回不去了。`
     };
   }
 
@@ -658,48 +749,47 @@ function buildEnding(state){
     return {
       sub:"神臨 · 太虛真人",
       title:"赤心未改，終抵神臨",
-      body:"你以近乎純粹的赤誠走完了這條路——不是不知世道艱難，而是明知艱難，仍選擇把自己當人看，也把別人當人看。星穹聖樓之巔，域與靈識外放的那一刻，你聽見遠處太虛閣的鐘聲彷彿為你而鳴。\n\n此後你以太虛閣真人的身份繼續巡守人間，聽聞列國之中，也有幾位年輕的天驕在江湖傳言裡提起過你的名字——其中一人，據說本名喚作姜望。你們未曾深交，卻在各自的赤心路上，遙遙印證著同一件事：這亂世裡，總有人選擇不把良知活丟。"
+      body:"你以近乎純粹的赤誠走完了這條路——不是不知世道艱難，而是明知艱難，仍選擇把自己當人看，也把別人當人看。域與靈識外放的那一刻，你聽見遠處太虛閣的鐘聲彷彿為你而鳴。\n\n此後你以太虛閣真人的身份繼續巡守人間，聽聞列國之中，也有幾位年輕的天驕在江湖傳言裡提起過你的名字——其中一人，據說本名喚作姜望。你們未曾深交，卻在各自的赤心路上，遙遙印證著同一件事：這亂世裡，總有人選擇不把良知活丟。"
     };
   }
 
   if(dom==="miao"){
     if(highChixin){
-      return {sub: success?"神臨 · 肱股名臣":"止步 · 清正官身", title: success?"廟堂之上，猶存赤心":"雖止步外樓，官聲清正",
-        body:`你選了一條在權力中心行走、卻始終不肯讓良知蒙塵的路。${success?"你終於證得神臨，成為列國敬重的肱股之臣，青史或許會記你一筆「仁政」。":"你雖未能突破神臨，止步於外樓境，卻也在廟堂之上留下了清正之名。"}\n\n你始終記得，「以權勢促公益則興，以權勢謀私利則亡」——這句話，你一生都當真了。`};
+      return {sub: success?"神臨 · 肱股名臣":"止步 · 清正官身", title: success?"廟堂之上，猶存赤心":`雖止步${finalStageName}，官聲清正`,
+        body:`你選了一條在權力中心行走、卻始終不肯讓良知蒙塵的路。${success?"你終於證得神臨，成為列國敬重的肱股之臣，青史或許會記你一筆「仁政」。":`你雖未能突破神臨，止步於${finalStageName}，卻也在廟堂之上留下了清正之名。`}\n\n你始終記得，「以權勢促公益則興，以權勢謀私利則亡」——這句話，你一生都當真了。`};
     }
     return {sub: success?"神臨 · 權謀深沉":"止步 · 宦海浮沉", title: success?"位極人臣，心已蒼老":"宦海沉浮，未至巔峰",
-      body:`你在廟堂的博弈裡越走越深，${success?"最終證得神臨，權柄煊赫一時，只是身邊真心之人，早已所剩無幾。":"雖未能觸及神臨之境，卻也在權術傾軋中活成了一方角色。"}\n\n有時夜深人靜，你也會想，如果當年多一點赤誠、少一點算計，如今的自己會是什麼模樣。`};
+      body:`你在廟堂的博弈裡越走越深，${success?"最終證得神臨，權柄煊赫一時，只是身邊真心之人，早已所剩無幾。":`雖未能觸及神臨之境，止步於${finalStageName}，卻也在權術傾軋中活成了一方角色。`}\n\n有時夜深人靜，你也會想，如果當年多一點赤誠、少一點算計，如今的自己會是什麼模樣。`};
   }
 
   if(dom==="jianghu"){
     if(highChixin){
       return {sub: success?"神臨 · 一代宗師":"止步 · 俠名遠揚", title: success?"快意恩仇，赤心不悔":"雖未神臨，俠骨錚錚",
-        body:`你行走四方，路見不平、拔劍相助，${success?"終於在江湖傳頌與自身砥礪中證得神臨，成為後輩口中「一代宗師」的傳說。":"雖未能踏入神臨之境，「赤心遊俠」的名號卻已響徹列國江湖。"}\n\n你這一生，未必顯赫於廟堂，卻活得堂堂正正、無愧於心。`};
+        body:`你行走四方，路見不平、拔劍相助，${success?"終於在江湖傳頌與自身砥礪中證得神臨，成為後輩口中「一代宗師」的傳說。":`雖未能踏入神臨之境，止步於${finalStageName}，「赤心遊俠」的名號卻已響徹列國江湖。`}\n\n你這一生，未必顯赫於廟堂，卻活得堂堂正正、無愧於心。`};
     }
     return {sub: success?"神臨 · 孤高強者":"止步 · 快意恩仇", title:"恩怨分明，眾人敬畏三分",
-      body:`你快意恩仇、賞罰隨心，${success?"憑一身狠辣手段證得神臨，威名赫赫，卻也讓不少人敬而遠之。":"雖未達神臨之境，江湖上提起你，多是敬畏多過親近。"}\n\n你曾經也想過，是不是該對這世道更軟一些——但轉念一想，若人人都欺你軟弱，軟弱又有什麼用。`};
+      body:`你快意恩仇、賞罰隨心，${success?"憑一身狠辣手段證得神臨，威名赫赫，卻也讓不少人敬而遠之。":`雖未達神臨之境，止步於${finalStageName}，江湖上提起你，多是敬畏多過親近。`}\n\n你曾經也想過，是不是該對這世道更軟一些——但轉念一想，若人人都欺你軟弱，軟弱又有什麼用。`};
   }
 
-  // dom === daotong 但赤心不高，或其餘情況
   if(success){
     return {sub:"神臨 · 問道有成", title:"道成，心境已非當年",
-      body:"你潛心問道，終於在星穹聖樓之巔證得神臨之境，域與靈識外放，天地為之側目。這一路你走得孤獨，卻也算求仁得仁——道途從來由你自己選擇，旁人的評說，於你已不甚重要。"};
+      body:"你潛心問道，終於證得神臨之境，域與靈識外放，天地為之側目。這一路你走得孤獨，卻也算求仁得仁——道途從來由你自己選擇，旁人的評說，於你已不甚重要。"};
   }
-  return {sub:"止步 · 外樓終老", title:"未至神臨，此心無悔",
-    body:"星穹聖樓之巔的最後一步，你終究未能踏過。你止步於外樓境，此後或歸隱鄉里、或繼續在自己選定的道途上緩緩前行。\n\n「此境巔峰，也不過滿足破境條件」——境界從不是修行的全部。你這一生做過的抉擇，比你止步於哪一品，更能說明你是誰。"};
+  return {sub:`止步 · ${finalStageName}`, title:"未至神臨，此心無悔",
+    body:`你此生的最後一步，終究未能踏過神臨大關。你止步於${finalStageName}，此後或歸隱鄉里、或繼續在自己選定的道途上緩緩前行。\n\n「此境巔峰，也不過滿足破境條件」——境界從不是修行的全部。你這一生做過的抉擇，比你止步於哪一品，更能說明你是誰。`};
 }
 
 /* ===================== 遊戲狀態 State ===================== */
 let state = null;
 let create = {origin:null, path:null, alloc:{gu:0,wu:0,ji:0,ren:0}, poolLeft:8};
-let flow = {stageIdx:-1, phase:"stage-intro", eventOrder:[], eventPos:0, pendingEffects:null};
+let flow = {stageIdx:0, movesUsed:0, maxMoves:16, currentNodeId:null, nodeUsed:{}};
 
 function newState(){
   return {
     gu:4, wu:4, ji:4, ren:4,
     daoyuan:0, chixin:50, health:100,
     miao:0, jianghu:0, daotong:0, xie:0,
-    journal:[], finaleSuccess:false
+    journal:[], finaleSuccess:false, finalStageName:null
   };
 }
 
@@ -789,12 +879,6 @@ function goStep(n){
 }
 
 /* ===================== 遊戲主流程 ===================== */
-function pickN(arr, n){
-  const copy = [...arr.keys()];
-  for(let i=copy.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [copy[i],copy[j]]=[copy[j],copy[i]]; }
-  return copy.slice(0,n);
-}
-
 function startGame(){
   state = newState();
   const o = create.origin, p = create.path;
@@ -807,7 +891,7 @@ function startGame(){
   state.originId = o.id; state.originName = o.name;
   state.pathId = p.id; state.pathName = p.name;
 
-  flow = {stageIdx:0, phase:"stage-intro", eventOrder:pickN(STAGES[0].events,2), eventPos:0};
+  flow = {stageIdx:0, movesUsed:0, maxMoves:16, currentNodeId:o.id, nodeUsed:{}};
   showScreen("screen-game");
   renderSidebar();
   renderStageIntro();
@@ -823,6 +907,9 @@ function clampAll(){
 
 function renderSidebar(){
   document.getElementById("side-id").textContent = `${state.originName} · ${state.pathName}`;
+  const curNode = MAP_NODES.find(n=>n.id===flow.currentNodeId);
+  document.getElementById("side-location").textContent = curNode ? curNode.name : "—";
+  document.getElementById("side-moves").textContent = `${flow.movesUsed} / ${flow.maxMoves}`;
   document.getElementById("v-health").textContent = state.health;
   document.getElementById("f-health").style.width = state.health+"%";
   document.getElementById("v-chixin").textContent = state.chixin;
@@ -842,14 +929,14 @@ function renderSidebar(){
 
   const dotsWrap = document.getElementById("stage-track");
   dotsWrap.innerHTML = "";
-  STAGES.forEach((s,i)=>{
+  CULT_STAGES.forEach((s,i)=>{
     const d = document.createElement("span");
     d.className = "stage-dot" + (i<flow.stageIdx?" done":"") + (i===flow.stageIdx?" now":"");
     d.title = s.name;
     dotsWrap.appendChild(d);
   });
   const fd = document.createElement("span");
-  fd.className = "stage-dot" + (flow.stageIdx>=STAGES.length?" now":"");
+  fd.className = "stage-dot" + (flow.stageIdx>=CULT_STAGES.length?" now":"");
   fd.title = FINALE.name;
   dotsWrap.appendChild(fd);
 
@@ -857,26 +944,120 @@ function renderSidebar(){
   jl.innerHTML = state.journal.map(j=>`<li><b>${j.stage}</b> · ${j.title}：${j.choice}</li>`).join("");
 }
 
-function renderStageIntro(){
-  const stage = STAGES[flow.stageIdx];
-  document.getElementById("story-stage").textContent = `${stage.rank} ${stage.name}`;
-  document.getElementById("story-index").textContent = "境界綜述";
-  document.getElementById("story-title").textContent = stage.name;
-  document.getElementById("story-text").innerHTML = `<p>${stage.intro}</p>`;
-  document.getElementById("story-choices").innerHTML = "";
-  const btn = document.createElement("button");
-  btn.className = "choice-btn"; btn.style.maxWidth="220px";
-  btn.textContent = "踏入此境 →";
-  btn.addEventListener("click", ()=>{ flow.phase="event"; renderEvent(); });
-  document.getElementById("story-choices").appendChild(btn);
-  document.getElementById("result-box").classList.add("hide");
+function currentCultStage(){
+  return CULT_STAGES[Math.min(flow.stageIdx, CULT_STAGES.length-1)];
 }
 
-function renderEvent(){
-  const stage = STAGES[flow.stageIdx];
-  const ev = stage.events[flow.eventOrder[flow.eventPos]];
-  document.getElementById("story-stage").textContent = `${stage.rank} ${stage.name}`;
-  document.getElementById("story-index").textContent = `境遇 ${flow.eventPos+1} / ${flow.eventOrder.length}`;
+function renderStageIntro(){
+  const cs = currentCultStage();
+  document.getElementById("story-card").classList.remove("trial-card");
+  document.getElementById("story-stage").textContent = `${cs.rank} ${cs.name}`;
+  document.getElementById("story-index").textContent = "境界綜述";
+  document.getElementById("story-title").textContent = cs.name;
+  document.getElementById("story-text").innerHTML = `<p>${cs.intro}</p>`;
+  document.getElementById("result-box").classList.add("hide");
+  const wrap = document.getElementById("story-choices");
+  wrap.innerHTML = "";
+  const btn = document.createElement("button");
+  btn.className = "choice-btn"; btn.style.maxWidth = "220px";
+  btn.textContent = "踏上行程 →";
+  btn.addEventListener("click", ()=>{
+    if(flow.stageIdx >= CULT_STAGES.length || flow.movesUsed >= flow.maxMoves){ renderFinale(); }
+    else { renderMap(); }
+  });
+  wrap.appendChild(btn);
+}
+
+/* ---------- 地圖 ---------- */
+function renderMap(){
+  document.getElementById("story-card").classList.remove("trial-card");
+  document.getElementById("result-box").classList.add("hide");
+  const cs = currentCultStage();
+  const curNode = MAP_NODES.find(n=>n.id===flow.currentNodeId);
+  document.getElementById("story-stage").textContent = `${cs.rank} ${cs.name}`;
+  document.getElementById("story-index").textContent = `行程 ${flow.movesUsed} / ${flow.maxMoves}`;
+  document.getElementById("story-title").textContent = "遊歷天下";
+  document.getElementById("story-text").innerHTML = `<p>你現在身處<b>${curNode.name}</b>。點選地圖上的地點，決定下一步的去向——虛線標記處為邊荒、隕仙林等凶險絕地，需修為足夠方可涉足。</p>`;
+  const wrap = document.getElementById("story-choices");
+  wrap.innerHTML = "";
+  wrap.appendChild(buildMapElement());
+
+  const legend = document.createElement("div");
+  legend.className = "map-legend";
+  legend.innerHTML = `
+    <span><i class="legend-dot cur"></i>所在地</span>
+    <span><i class="legend-dot"></i>可前往</span>
+    <span><i class="legend-dot lock"></i>修為未足</span>`;
+  wrap.appendChild(legend);
+}
+
+function buildMapElement(){
+  const ns = "http://www.w3.org/2000/svg";
+  const container = document.createElement("div");
+  container.className = "map-wrap";
+
+  const svg = document.createElementNS(ns, "svg");
+  svg.setAttribute("class", "map-lines");
+  svg.setAttribute("viewBox", "0 0 100 100");
+  svg.setAttribute("preserveAspectRatio", "none");
+  MAP_EDGES.forEach(([a,b])=>{
+    const na = MAP_NODES.find(n=>n.id===a), nb = MAP_NODES.find(n=>n.id===b);
+    if(!na || !nb) return;
+    const line = document.createElementNS(ns, "line");
+    line.setAttribute("x1", na.x); line.setAttribute("y1", na.y);
+    line.setAttribute("x2", nb.x); line.setAttribute("y2", nb.y);
+    line.setAttribute("class", "map-edge");
+    svg.appendChild(line);
+  });
+  container.appendChild(svg);
+
+  const nodesLayer = document.createElement("div");
+  nodesLayer.className = "map-nodes";
+  MAP_NODES.forEach(n=>{
+    const locked = n.gate!=null && flow.stageIdx < n.gate;
+    const isCurrent = n.id === flow.currentNodeId;
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "map-node " + (isCurrent ? "is-current" : locked ? "is-locked" : "is-open") + (n.special ? " is-special" : "");
+    btn.style.left = n.x + "%";
+    btn.style.top = n.y + "%";
+    const gateLabel = locked ? `<span class="map-gate">${CULT_STAGES[n.gate].rank}${CULT_STAGES[n.gate].name}以上</span>` : "";
+    btn.innerHTML = `<span class="map-dot"></span><span class="map-name">${n.name}</span>${gateLabel}`;
+    if(!locked && !isCurrent){
+      btn.addEventListener("click", ()=> travelTo(n.id));
+    } else {
+      btn.disabled = true;
+    }
+    nodesLayer.appendChild(btn);
+  });
+  container.appendChild(nodesLayer);
+  return container;
+}
+
+function pickNodeEvent(node){
+  if(!flow.nodeUsed[node.id]) flow.nodeUsed[node.id] = [];
+  const used = flow.nodeUsed[node.id];
+  const avail = node.events.map((e,i)=>i).filter(i=>!used.includes(i));
+  if(avail.length){
+    const idx = avail[Math.floor(Math.random()*avail.length)];
+    used.push(idx);
+    return node.events[idx];
+  }
+  return FILLER_EVENTS[Math.floor(Math.random()*FILLER_EVENTS.length)];
+}
+
+function travelTo(nodeId){
+  flow.currentNodeId = nodeId;
+  const node = MAP_NODES.find(n=>n.id===nodeId);
+  const ev = pickNodeEvent(node);
+  renderEvent(ev, node);
+}
+
+function renderEvent(ev, node){
+  const cs = currentCultStage();
+  document.getElementById("story-card").classList.remove("trial-card");
+  document.getElementById("story-stage").textContent = node.name;
+  document.getElementById("story-index").textContent = `${cs.rank} ${cs.name}`;
   document.getElementById("story-title").textContent = ev.title;
   document.getElementById("story-text").innerHTML = `<p>${ev.text}</p>`;
   const wrap = document.getElementById("story-choices");
@@ -885,10 +1066,11 @@ function renderEvent(){
     const b = document.createElement("button");
     b.className = "choice-btn";
     b.innerHTML = `<span class="cn">〔${c.cn}〕</span>${c.label}`;
-    b.addEventListener("click", ()=> resolveChoice(ev, c, stage.name));
+    b.addEventListener("click", ()=> resolveChoice(ev, c, node.name));
     wrap.appendChild(b);
   });
   document.getElementById("result-box").classList.add("hide");
+  renderSidebar();
 }
 
 function applyEffects(effects){
@@ -905,10 +1087,9 @@ function effectChips(effects){
   }).join("");
 }
 
-function resolveChoice(ev, choice, stageName){
+function resolveChoice(ev, choice, locationName){
   applyEffects(choice.effects);
-  state.journal.push({stage:stageName, title:ev.title, choice:choice.label.replace(/^./,"") + "" });
-  state.journal[state.journal.length-1].choice = choice.label;
+  state.journal.push({stage:locationName, title:ev.title, choice:choice.label});
   renderSidebar();
 
   document.getElementById("story-choices").innerHTML = "";
@@ -918,13 +1099,21 @@ function resolveChoice(ev, choice, stageName){
   document.getElementById("result-chips").innerHTML = effectChips(choice.effects);
   document.getElementById("btn-continue").onclick = ()=>{
     if(state.health<=0){ finishGame(); return; }
-    flow.eventPos++;
-    if(flow.eventPos < flow.eventOrder.length){
-      renderEvent();
-    } else {
-      renderBreakthrough();
-    }
+    flow.movesUsed++;
+    afterMove();
   };
+}
+
+function afterMove(){
+  if(flow.stageIdx < STAGE_THRESHOLD.length && state.daoyuan >= STAGE_THRESHOLD[flow.stageIdx]){
+    renderBreakthrough();
+    return;
+  }
+  if(flow.stageIdx >= CULT_STAGES.length || flow.movesUsed >= flow.maxMoves){
+    renderFinale();
+    return;
+  }
+  renderMap();
 }
 
 function breakthroughChance(attrKey){
@@ -942,10 +1131,10 @@ function breakthroughChance(attrKey){
 }
 
 function renderBreakthrough(){
-  const stage = STAGES[flow.stageIdx];
-  const bt = stage.breakthrough;
+  const cs = currentCultStage();
+  const bt = cs.breakthrough;
   const chance = breakthroughChance(bt.attr);
-  document.getElementById("story-stage").textContent = `${stage.rank} ${stage.name}`;
+  document.getElementById("story-stage").textContent = `${cs.rank} ${cs.name}`;
   document.getElementById("story-index").textContent = "破境時刻";
   document.getElementById("story-title").textContent = bt.name;
   document.getElementById("story-card").classList.add("trial-card");
@@ -966,37 +1155,28 @@ function renderBreakthrough(){
     let effects;
     if(success){
       effects = {daoyuan:-Math.round(state.daoyuan*0.5), health:-6, chixin:2};
-      document.getElementById("result-text").textContent = `一線道機貫通全身——你成功突破，正式踏入「${stage.rank} ${stage.name}」之境！`;
-      state.journal.push({stage:stage.name, title:"破境", choice:"成功突破，境界更進一階"});
+      document.getElementById("result-text").textContent = `一線道機貫通全身——你成功突破，正式踏入「${cs.rank} ${cs.name}」之境！`;
+      state.journal.push({stage:cs.name, title:"破境", choice:"成功突破，境界更進一階"});
     } else {
       effects = {health:-14, daoyuan:-Math.round(state.daoyuan*0.3)};
       document.getElementById("result-text").textContent = `道機在你體內橫衝直撞，這一次未能功成——你受了不輕的反噬，但根基未損，尚可再圖後計。`;
-      state.journal.push({stage:stage.name, title:"破境", choice:"未能突破，帶傷前行"});
+      state.journal.push({stage:cs.name, title:"破境", choice:"未能突破，帶傷前行"});
     }
     applyEffects(effects);
     renderSidebar();
     document.getElementById("result-chips").innerHTML = effectChips(effects);
     document.getElementById("btn-continue").onclick = ()=>{
       if(state.health<=0){ finishGame(); return; }
-      nextStage();
+      flow.stageIdx++;
+      renderSidebar();
+      renderStageIntro();
     };
   });
   wrap.appendChild(b);
 }
 
-function nextStage(){
-  flow.stageIdx++;
-  if(flow.stageIdx < STAGES.length){
-    flow.phase = "stage-intro";
-    flow.eventOrder = pickN(STAGES[flow.stageIdx].events, 2);
-    flow.eventPos = 0;
-    renderStageIntro();
-  } else {
-    renderFinale();
-  }
-}
-
 function renderFinale(){
+  state.finalStageName = currentCultStage().name;
   document.getElementById("story-stage").textContent = `${FINALE.rank} ${FINALE.name}`;
   document.getElementById("story-index").textContent = "終極試煉";
   document.getElementById("story-title").textContent = FINALE.name;
@@ -1022,6 +1202,7 @@ function renderFinale(){
 }
 
 function finishGame(){
+  if(!state.finalStageName) state.finalStageName = currentCultStage().name;
   const ending = buildEnding(state);
   showScreen("screen-end");
   document.getElementById("end-sub").textContent = ending.sub;
